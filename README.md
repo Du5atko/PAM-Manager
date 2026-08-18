@@ -9,7 +9,7 @@ It does not aim to be a PAM module itself. It works on top of PAM configuration 
        Policy model
              │
              ▼
-   UnifiedConfigManager
+       ConfigManager
              │
        ┌─────┴─────┐
        ▼           ▼
