@@ -1,0 +1,41 @@
+{
+  "bundle_name": "10-umask-by-group",
+  "version": "1.0.0",
+  "title": "File Umask Based on User Group",
+  "description": "Set different file creation umask permissions based on user's group membership",
+  "author": "PAM Manager v9.0",
+  "category": "session",
+  "security_level": "medium",
+  "pam_services": ["login", "sshd"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": ["libpam-modules"], "package_manager": "apt"},
+    "fedora_rhel": {"packages": ["pam"], "package_manager": "dnf"},
+    "alpine": {"packages": ["pam"], "package_manager": "apk"},
+    "arch": {"packages": ["pam"], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "session_stack": [
+      "session [success=1 default=ignore] pam_succeed_if.so quiet user notingroup developers",
+      "session optional pam_umask.so umask=0022",
+      "session optional pam_umask.so umask=0002"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["pam_umask module", "User groups configured"],
+    "pam_modules": ["pam_succeed_if", "pam_umask"],
+    "group_requirements": ["developers group must exist"]
+  },
+  "notes": {
+    "developer_umask": "0002 - More permissive for group collaboration",
+    "regular_user_umask": "0022 - Restrictive, only user can read/write",
+    "umask_values": {
+      "0002": "rw-rw-r-- (user and group can write)",
+      "0022": "rw-r--r-- (only user can write)",
+      "0077": "rw------- (only user, very restrictive)"
+    }
+  },
+  "script_file": "10-umask-by-group.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

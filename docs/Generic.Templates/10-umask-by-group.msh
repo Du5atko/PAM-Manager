@@ -1,0 +1,465 @@
+#!/bin/bash
+#
+# PAM Bundle: 10-umask-by-group
+# Title: File Umask Based on User Group
+# Description: Different file permissions based on user's group membership
+# Version: 1.0.0
+#
+# This bundle sets different umask values based on user group:
+# - Members of 'developers' group: umask 0002 (rw-rw-r--)
+#   Files are readable/writable by group for collaboration
+# - Other users: umask 0022 (rw-r--r--)
+#   Files are readable by group but writable only by owner
+#
+# INSTALLATION:
+# 1. Run: bash 10-umask-by-group.msh
+# 2. Configure user groups with: usermod -aG developers username
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Group-Based Umask Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+if [ "$EUID" -ne 0 ]; then 
+    echo -e "${RED}Error: This script must be run as root${NC}"
+    exit 1
+fi
+
+create_developer_group() {
+    echo -e "${BLUE}Setting up developer group...${NC}"
+    
+    if grep -q "^developers:" /etc/group; then
+        echo -e "${GREEN}✓ Developer group already exists${NC}"
+    else
+        groupadd -r developers
+        echo -e "${GREEN}✓ Created developer group${NC}"
+    fi
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for group-based umask...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.umask
+        fi
+    done
+    
+    cat > /tmp/pam-umask-snippet.txt << 'EOF'
+# Group-Based Umask Configuration
+# Add to /etc/pam.d/login and /etc/pam.d/sshd in session stack
+
+# If user is NOT in developers group, use restrictive umask
+session [success=1 default=ignore] pam_succeed_if.so quiet user notingroup developers
+session optional pam_umask.so umask=0022
+
+# If user IS in developers group, use permissive umask
+session optional pam_umask.so umask=0002
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+create_umask_tools() {
+    echo -e "${BLUE}Creating umask management tools...${NC}"
+    
+    cat > /usr/local/bin/check-current-umask.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Show current umask and what it means
+#
+
+echo "Current Umask Information"
+echo "========================="
+echo ""
+
+UMASK=$(umask)
+echo "Current umask: $UMASK"
+echo ""
+
+# Explain the umask
+case $UMASK in
+    0022)
+        echo "Interpretation: Files created as rw-r--r-- (644)"
+        echo "                Directories created as rwxr-xr-x (755)"
+        echo "                Only owner can write to files"
+        echo "                Type: STANDARD (restrictive)"
+        ;;
+    0002)
+        echo "Interpretation: Files created as rw-rw-r-- (664)"
+        echo "                Directories created as rwxrwxr-x (775)"
+        echo "                Owner and group can write to files"
+        echo "                Type: DEVELOPER (collaborative)"
+        ;;
+    0077)
+        echo "Interpretation: Files created as rw------- (600)"
+        echo "                Directories created as rwx------ (700)"
+        echo "                Only owner can access files"
+        echo "                Type: STRICT (maximum privacy)"
+        ;;
+    *)
+        echo "Interpretation: Custom umask value"
+        echo "Type: NON-STANDARD"
+        ;;
+esac
+
+echo ""
+echo "Your group membership:"
+groups
+
+echo ""
+echo "Applied umask policy:"
+if groups | grep -q "developers"; then
+    echo "  ✓ You are in 'developers' group"
+    echo "  Expected umask: 0002"
+else
+    echo "  ✗ You are NOT in 'developers' group"
+    echo "  Expected umask: 0022"
+fi
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/check-current-umask.sh
+    
+    cat > /usr/local/sbin/add-user-to-developers.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Add user to developers group
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Verify user exists
+if ! id "$USERNAME" &>/dev/null; then
+    echo "Error: User '$USERNAME' does not exist"
+    exit 1
+fi
+
+# Add to group
+usermod -aG developers "$USERNAME"
+
+echo "✓ User '$USERNAME' added to 'developers' group"
+echo ""
+echo "Changes will take effect on next login"
+echo "User will get umask 0002 (collaborative file permissions)"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/add-user-to-developers.sh
+    
+    cat > /usr/local/sbin/verify-umask-policy.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Verify group-based umask policy
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "Umask Policy Verification"
+echo "========================="
+echo ""
+
+# Check PAM configuration
+echo "PAM Configuration:"
+for service in login sshd; do
+    if [ -f /etc/pam.d/$service ]; then
+        if grep -q "pam_umask.so" /etc/pam.d/$service; then
+            echo "  ✓ /etc/pam.d/$service has pam_umask configured"
+        else
+            echo "  ✗ /etc/pam.d/$service missing pam_umask"
+        fi
+    fi
+done
+
+echo ""
+echo "Developers Group:"
+if grep -q "^developers:" /etc/group; then
+    echo "  ✓ developers group exists"
+    echo "  Members: $(getent group developers | cut -d: -f4 | tr ',' '\n' | tr -d ' ')"
+else
+    echo "  ✗ developers group does NOT exist"
+fi
+
+echo ""
+echo "Policy Summary:"
+echo "  Developers (in group): umask 0002 (rw-rw-r--)"
+echo "  Regular users: umask 0022 (rw-r--r--)"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/verify-umask-policy.sh
+    echo -e "${GREEN}✓ Created umask management tools${NC}"
+}
+
+create_umask_documentation() {
+    echo -e "${BLUE}Creating umask documentation...${NC}"
+    
+    cat > /usr/local/share/doc/umask-by-group-README.txt << 'DOC'
+FILE UMASK BY GROUP - DOCUMENTATION
+====================================
+
+PURPOSE:
+Set different file creation permissions (umask) based on user's group
+membership. Facilitates collaboration for team members while restricting
+other users' access.
+
+UMASK EXPLAINED:
+
+Umask controls default permissions for newly created files/directories.
+
+Umask 0022 (Restrictive):
+- Files: rw-r--r-- (owner rw, group r, others r)
+- Directories: rwxr-xr-x (owner rwx, group rx, others rx)
+- Only owner can modify files
+- Best for: Individual users, security-sensitive accounts
+
+Umask 0002 (Collaborative):
+- Files: rw-rw-r-- (owner rw, group rw, others r)
+- Directories: rwxrwxr-x (owner rwx, group rwx, others rx)
+- Owner and group can modify files
+- Best for: Team collaboration, development teams
+
+Umask 0077 (Very Restrictive):
+- Files: rw------- (owner rw only)
+- Directories: rwx------ (owner rwx only)
+- No one else can access
+- Best for: Security-critical, high-privilege users
+
+HOW UMASK WORKS:
+
+Umask removes permissions from the default:
+- Default file permissions: 666
+- Default directory permissions: 777
+
+Formula:
+- File permission = 666 - umask
+- Directory permission = 777 - umask
+
+Example with umask 0022:
+- Files: 666 - 022 = 644 (rw-r--r--)
+- Dirs: 777 - 022 = 755 (rwxr-xr-x)
+
+CONFIGURATION:
+
+This bundle configures:
+
+1. "developers" group
+   - Users added with: usermod -aG developers username
+   - Members get umask 0002
+
+2. Regular users
+   - All other users
+   - Get umask 0022
+
+USING IN YOUR ENVIRONMENT:
+
+1. Add developer to team:
+   sudo add-user-to-developers.sh alice
+
+2. Check current umask:
+   check-current-umask.sh
+
+3. Verify policy:
+   sudo verify-umask-policy.sh
+
+EXAMPLE SCENARIO:
+
+Developer Team Project:
+---
+/opt/project/
+├── config.txt      (owned by alice, group: developers, perms: 664)
+├── src/            (owned by alice, group: developers, perms: 775)
+└── data/           (owned by alice, group: developers, perms: 775)
+
+With umask 0002:
+- alice can read/write: YES
+- bob (in developers): can read/write: YES
+- charlie (regular): can read only: YES
+
+---
+
+Regular User Files:
+---
+/home/charlie/
+├── document.txt    (owned by charlie, perms: 644)
+└── personal/       (owned by charlie, perms: 755)
+
+With umask 0022:
+- charlie can read/write: YES
+- alice (other user): can read only: YES
+- group: can read only: YES
+
+SECURITY IMPLICATIONS:
+
+1. Collaborative Benefits
+   - Team members can modify shared code
+   - Reduces need for sudo/root access
+   - Streamlines development workflow
+
+2. Security Trade-offs
+   - Group members have write access
+   - Careful with group membership
+   - Audit who has group access
+
+3. Best Practices
+   - Use 'developers' for legitimate dev teams only
+   - Review group membership quarterly
+   - Log important file modifications
+   - Use version control for code
+
+TESTING:
+
+1. Create test file with different umasks:
+
+   Regular user (umask 0022):
+   $ umask
+   0022
+   $ touch testfile.txt
+   $ ls -l testfile.txt
+   -rw-r--r-- (644)
+
+   Developer (umask 0002):
+   $ umask
+   0002
+   $ touch testfile.txt
+   $ ls -l testfile.txt
+   -rw-rw-r-- (664)
+
+2. Test with groups:
+   $ groups
+   developers sudo
+   $ umask
+   0002
+   $ mkdir testdir
+   $ ls -ld testdir
+   drwxrwxr-x (775)
+
+TROUBLESHOOTING:
+
+1. Umask not changing:
+   - Verify PAM configuration in /etc/pam.d/
+   - Check pam_umask.so is in session stack
+   - User must login again (logout, then login)
+   - May require shell restart
+
+2. Still not 0002:
+   - Check user is actually in developers group: groups
+   - Verify group name is exactly "developers"
+   - Check PAM syntax for typos
+
+3. Can't create files in shared directory:
+   - Directory must have write permission for group
+   - Check directory permissions: ls -ld dirname
+   - Directory owner might need to set correct permissions
+   - Change: chmod g+w dirname
+
+4. Existing files not affected:
+   - Umask only affects NEW file creation
+   - Existing files keep original permissions
+   - Change with: chmod g+w filename
+
+ADMINISTRATION:
+
+1. Add user to developers:
+   sudo usermod -aG developers alice
+
+2. Remove user from developers:
+   sudo usermod -G oldgroups alice  (don't include developers)
+   or
+   sudo delgroup alice developers
+
+3. See developers group members:
+   getent group developers
+   or
+   grep "^developers:" /etc/group
+
+4. List all groups for user:
+   groups alice
+
+5. Create additional group for different umask:
+   groupadd artists
+   # Add pam_umask rule for "artists" group with custom umask
+
+ADVANCED CONFIGURATIONS:
+
+Multiple Groups:
+---
+# developers: umask 0002
+# contractors: umask 0022 (more restrictive)
+# admins: umask 0077 (very restrictive)
+
+session [success=1 default=ignore] pam_succeed_if.so quiet user ingroup developers
+session optional pam_umask.so umask=0002
+
+session [success=1 default=ignore] pam_succeed_if.so quiet user ingroup admins
+session optional pam_umask.so umask=0077
+
+session optional pam_umask.so umask=0022  # Default for others
+
+COMPLIANCE:
+
+NIST Guidelines:
+- Regular users: umask 0077 or 0022 recommended
+- Service accounts: umask 0077 (very restrictive)
+- Developers: umask 0002 acceptable with oversight
+
+HIPAA/PCI-DSS:
+- User data: umask 0077 (no group access)
+- System files: umask 0022
+- Audit files: umask 0077
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/umask-by-group-README.txt
+    echo -e "${GREEN}✓ Created umask documentation${NC}"
+}
+
+main() {
+    create_developer_group
+    configure_pam
+    create_umask_tools
+    create_umask_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Group-Based Umask Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Developer group: developers"
+    echo "  - Members: umask 0002 (rw-rw-r--)"
+    echo "  - Others: umask 0022 (rw-r--r--)"
+    echo ""
+    echo "Management commands:"
+    echo "  - Check current umask: check-current-umask.sh"
+    echo "  - Add to developers: sudo add-user-to-developers.sh <user>"
+    echo "  - Verify policy: sudo verify-umask-policy.sh"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review template: cat /tmp/pam-umask-snippet.txt"
+    echo "2. Add PAM config to /etc/pam.d/login and /etc/pam.d/sshd"
+    echo "3. Add developers to group: sudo add-user-to-developers.sh username"
+    echo "4. Have users logout and login to apply umask"
+    echo ""
+}
+
+main "$@"

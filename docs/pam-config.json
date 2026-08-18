@@ -1,0 +1,16 @@
+{
+  "schema_version": "2.0",
+  "created": "2026-08-16T11:18:03.238164",
+  "modified": "2026-08-16T11:18:03.238174",
+  "metadata": {
+    "name": "PAM Configuration",
+    "description": "PAM policy configuration",
+    "environment": "production",
+    "backup_enabled": true
+  },
+  "fragments": [],
+  "elements": [],
+  "services": [],
+  "service_files": [],
+  "audit_log": []
+}

@@ -1,0 +1,59 @@
+{
+  "bundle_name": "03-yubikey-rescue",
+  "version": "1.0.0",
+  "title": "Emergency Recovery Account with YubiKey",
+  "description": "Emergency rescue account accessible only with specific YubiKey from local console. Used for system recovery when regular authentication fails",
+  "author": "PAM Manager v9.0",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": ["login"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {
+      "packages": ["libpam-u2f", "pamu2fcfg"],
+      "package_manager": "apt"
+    },
+    "fedora_rhel": {
+      "packages": ["pam-u2f", "pamu2fcfg"],
+      "package_manager": "dnf"
+    },
+    "alpine": {
+      "packages": ["pam-u2f"],
+      "package_manager": "apk"
+    },
+    "arch": {
+      "packages": ["pam-u2f"],
+      "package_manager": "pacman"
+    }
+  },
+  "configuration": {
+    "auth_stack": [
+      "auth [success=1 default=ignore] pam_succeed_if.so user = rescue service = login",
+      "auth requisite pam_deny.so",
+      "auth required pam_u2f.so authfile=/etc/security/rescue_u2f"
+    ],
+    "account_stack": [
+      "account required pam_permit.so"
+    ],
+    "session_stack": [
+      "session required pam_permit.so"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Linux kernel 4.0+", "libfido2", "Root/Administrator access"],
+    "pam_modules": ["pam_succeed_if", "pam_deny", "pam_u2f"],
+    "user_accounts": ["rescue (must be created)"],
+    "physical_security": ["Backup YubiKey stored securely"],
+    "access_restriction": ["Local console only"]
+  },
+  "notes": {
+    "criticality": "This account is for emergency use only",
+    "access": "Physical access to console required",
+    "security": "Store backup rescue YubiKey in secure location",
+    "setup": "Requires specific YubiKey registration",
+    "sudo_access": "Rescue account has sudo access for system recovery"
+  },
+  "script_file": "03-yubikey-rescue.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

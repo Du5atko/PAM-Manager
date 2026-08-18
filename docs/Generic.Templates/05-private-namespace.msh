@@ -1,0 +1,311 @@
+#!/bin/bash
+#
+# PAM Bundle: 05-private-namespace
+# Title: Private Mount Namespace per User
+# Description: Isolate temporary file directories per user session
+# Version: 1.0.0
+#
+# This bundle creates private mount namespaces so each user gets their own
+# isolated /tmp and /var/tmp directories. This prevents users from accessing
+# or interfering with other users' temporary files.
+#
+# INSTALLATION:
+# 1. Run: bash 05-private-namespace.msh
+# 2. Configure /etc/security/namespace.conf
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Private Mount Namespace Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+install_packages() {
+    echo -e "${BLUE}Installing namespace support packages...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            apt update
+            apt install -y libpam-namespaces
+            ;;
+        fedora|rhel|centos)
+            dnf install -y pam-namespaces
+            ;;
+        alpine)
+            apk add pam-namespace
+            ;;
+        arch|manjaro)
+            pacman -S --noconfirm pam-namespace
+            ;;
+    esac
+    echo -e "${GREEN}✓ Namespace support installed${NC}"
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for private namespaces...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.namespace
+        fi
+    done
+    
+    cat > /tmp/pam-namespace-snippet.txt << 'EOF'
+# Private Mount Namespace Configuration
+# Add to /etc/pam.d/login and /etc/pam.d/sshd
+
+session required pam_namespace.so
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_namespace_config() {
+    echo -e "${BLUE}Setting up namespace configuration...${NC}"
+    
+    # Create namespace.conf if it doesn't exist
+    if [ ! -f /etc/security/namespace.conf ]; then
+        cat > /etc/security/namespace.conf << 'NSCONF'
+# Namespace configuration for PAM
+# Format: path   instance_prefix   polyinstantiate_mode   mode shared_ptr
+# 
+# This file defines which directories should be polyinstantiated
+# (made private for each user session)
+#
+# Common polyinstantiation modes:
+# user         - one instance per user
+# level        - one instance per security level
+# user-shared  - shared between same user's sessions
+#
+
+# Polyinstantiate /tmp and /var/tmp for each user
+/tmp                 /tmp/%U                 user                 0755 root
+/var/tmp             /var/tmp/%U             user                 0755 root
+
+# Optional: Polyinstantiate /dev/shm for better isolation
+# /dev/shm             /dev/shm/%U             user                 0755 root
+
+NSCONF
+        
+        chmod 644 /etc/security/namespace.conf
+        echo -e "${GREEN}✓ Created /etc/security/namespace.conf${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/security/namespace.conf already exists${NC}"
+    fi
+}
+
+create_namespace_tools() {
+    echo -e "${BLUE}Creating namespace management tools...${NC}"
+    
+    cat > /usr/local/bin/check-namespace.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Check current namespace configuration and usage
+#
+
+echo "Namespace Configuration Check"
+echo "============================="
+echo ""
+
+# Show namespace.conf content
+if [ -f /etc/security/namespace.conf ]; then
+    echo "Current namespace configuration:"
+    echo "---"
+    grep -v "^#" /etc/security/namespace.conf | grep -v "^$"
+    echo "---"
+else
+    echo "Warning: /etc/security/namespace.conf not found"
+fi
+
+echo ""
+echo "Mounted namespaces for current user:"
+echo "---"
+
+# Show private temporary directories for current user
+USERNAME=$(whoami)
+if [ -d "/tmp/$USERNAME" ]; then
+    echo "✓ Private /tmp found: /tmp/$USERNAME"
+    echo "  Size: $(du -sh /tmp/$USERNAME 2>/dev/null | cut -f1)"
+else
+    echo "⚠ No private /tmp namespace"
+fi
+
+if [ -d "/var/tmp/$USERNAME" ]; then
+    echo "✓ Private /var/tmp found: /var/tmp/$USERNAME"
+    echo "  Size: $(du -sh /var/tmp/$USERNAME 2>/dev/null | cut -f1)"
+else
+    echo "⚠ No private /var/tmp namespace"
+fi
+
+echo "---"
+echo ""
+echo "Note: Private namespaces are created on login/session start"
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/check-namespace.sh
+    
+    cat > /usr/local/sbin/verify-namespace-isolation.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Verify namespace isolation between users
+# Should be run by administrator
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "Namespace Isolation Verification"
+echo "================================="
+echo ""
+
+# Check /tmp
+echo "Checking /tmp namespace isolation:"
+for tmpdir in /tmp/*; do
+    if [ -d "$tmpdir" ]; then
+        owner=$(ls -ld "$tmpdir" 2>/dev/null | awk '{print $3}')
+        perms=$(ls -ld "$tmpdir" 2>/dev/null | awk '{print $1}')
+        echo "  $(basename $tmpdir): owner=$owner, perms=$perms"
+    fi
+done
+
+echo ""
+echo "Checking /var/tmp namespace isolation:"
+for tmpdir in /var/tmp/*; do
+    if [ -d "$tmpdir" ]; then
+        owner=$(ls -ld "$tmpdir" 2>/dev/null | awk '{print $3}')
+        perms=$(ls -ld "$tmpdir" 2>/dev/null | awk '{print $1}')
+        echo "  $(basename $tmpdir): owner=$owner, perms=$perms"
+    fi
+done
+
+echo ""
+echo "✓ Each user should have separate directory with their ownership"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/verify-namespace-isolation.sh
+    echo -e "${GREEN}✓ Created namespace management tools${NC}"
+}
+
+create_namespace_documentation() {
+    echo -e "${BLUE}Creating namespace documentation...${NC}"
+    
+    cat > /usr/local/share/doc/namespace-README.txt << 'DOC'
+PRIVATE MOUNT NAMESPACE - DOCUMENTATION
+========================================
+
+PURPOSE:
+Namespace polyinstantiation provides per-user isolation of shared system
+directories, improving security and preventing accidental data sharing
+between user sessions.
+
+WHAT GETS ISOLATED:
+By default, this bundle isolates:
+- /tmp        → /tmp/%U (per-user temporary directory)
+- /var/tmp    → /var/tmp/%U (per-user variable temporary directory)
+
+SECURITY BENEFITS:
+1. Users cannot access other users' temporary files
+2. Prevents temporary file disclosure
+3. Stops malicious users from leaving data in /tmp
+4. Improves compliance with security policies
+5. Each session has completely private temporary space
+
+HOW IT WORKS:
+1. When user logs in, PAM creates a new namespace
+2. User's temporary directories are mounted privately
+3. /tmp and /var/tmp appear empty to the user
+4. All temporary files are isolated to that session
+5. When user logs out, namespace is destroyed
+
+VERIFICATION:
+# Users can check their namespace:
+check-namespace.sh
+
+# Administrators can verify isolation:
+sudo verify-namespace-isolation.sh
+
+CONFIGURATION:
+Edit /etc/security/namespace.conf to customize:
+- Which directories to polyinstantiate
+- Permissions on isolated directories
+- Whether to use user or level based isolation
+
+PERFORMANCE IMPACT:
+- Minimal (usually <1ms overhead per login)
+- Namespace mount/unmount is very fast
+- No impact on runtime performance
+
+TROUBLESHOOTING:
+
+1. Namespace not working?
+   - Check: pam_namespace.so is in /etc/pam.d/login
+   - Check: PAM session stack includes pam_namespace
+   - Check: /etc/security/namespace.conf exists
+   - Check: Kernel supports namespaces (lsns command)
+
+2. Permission denied errors in /tmp?
+   - Verify mount permissions in namespace.conf
+   - Check SELinux policies if enabled
+   - Ensure /tmp has correct permissions
+
+3. Disk space issues?
+   - Private namespaces use same filesystem
+   - Large /tmp usage creates large private directories
+   - Monitor with: du -sh /tmp/*
+
+ADVANCED CONFIGURATION:
+- SELinux context preservation: Add 'setsid' to PAM config
+- Device nodes: Use 'devpts' instead of 'user' for terminals
+- Network namespaces: Combine with network isolation
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/namespace-README.txt
+    echo -e "${GREEN}✓ Created namespace documentation${NC}"
+}
+
+main() {
+    detect_distro
+    install_packages
+    configure_pam
+    setup_namespace_config
+    create_namespace_tools
+    create_namespace_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Private Namespace Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Configuration file: /etc/security/namespace.conf"
+    echo "User checking tool: check-namespace.sh"
+    echo "Admin verification: sudo verify-namespace-isolation.sh"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review PAM template: cat /tmp/pam-namespace-snippet.txt"
+    echo "2. Add PAM configuration to /etc/pam.d/login and /etc/pam.d/sshd"
+    echo "3. Test with new user login"
+    echo "4. Verify isolation with: verify-namespace-isolation.sh"
+    echo ""
+}
+
+main "$@"

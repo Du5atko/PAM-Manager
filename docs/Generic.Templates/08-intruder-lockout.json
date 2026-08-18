@@ -1,0 +1,41 @@
+{
+  "bundle_name": "08-intruder-lockout",
+  "version": "1.0.0",
+  "title": "Intruder Detection and Account Lockout",
+  "description": "Lock account after failed authentication attempts using pam_faillock module",
+  "author": "PAM Manager v9.0",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": ["login", "sshd", "sudo"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": ["libpam-modules"], "package_manager": "apt"},
+    "fedora_rhel": {"packages": ["pam"], "package_manager": "dnf"},
+    "alpine": {"packages": ["pam"], "package_manager": "apk"},
+    "arch": {"packages": ["pam"], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "auth_stack": [
+      "auth required pam_faillock.so preauth silent audit deny=5 unlock_time=1200",
+      "auth required pam_unix.so nullok try_first_pass",
+      "auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=1200",
+      "auth sufficient pam_faillock.so authsucc"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["pam_faillock module"],
+    "pam_modules": ["pam_faillock", "pam_unix"],
+    "configuration_files": ["/etc/security/faillock.conf"],
+    "filesystem": "/var/run/faillock directory"
+  },
+  "notes": {
+    "attack_prevention": "Protects against brute force password attacks",
+    "default_policy": "5 failed attempts → 20 minutes lockout",
+    "automatic_unlock": "Accounts unlock after configured time",
+    "admin_unlock": "Administrators can manually unlock with 'faillock --user username --reset'",
+    "logging": "All attempts logged to /var/log/auth.log"
+  },
+  "script_file": "08-intruder-lockout.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

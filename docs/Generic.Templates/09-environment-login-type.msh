@@ -1,0 +1,486 @@
+#!/bin/bash
+#
+# PAM Bundle: 09-environment-login-type
+# Title: Environment Variables by Login Type
+# Description: Set environment based on whether login is local or remote
+# Version: 1.0.0
+#
+# This bundle sets the LOGIN_ORIGIN environment variable to indicate
+# how the user logged in:
+# - "local" : Physical console or local terminal
+# - "remote" : SSH or remote login
+#
+# Useful for:
+# - Conditional shell behavior
+# - Security scripts and notifications
+# - Audit logging
+# - Different configurations per login type
+#
+# INSTALLATION:
+# 1. Run: bash 09-environment-login-type.msh
+# 2. Configure /etc/security/pam_env.local.conf and pam_env.remote.conf
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Environment by Login Type Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for login-type environment...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.env
+        fi
+    done
+    
+    cat > /tmp/pam-env-snippet.txt << 'EOF'
+# Environment Setup by Login Type
+# Add to BOTH /etc/pam.d/login AND /etc/pam.d/sshd
+
+# For login service (local console):
+session optional pam_env.so conffile=/etc/security/pam_env.local.conf
+
+# For sshd service (remote SSH):
+session optional pam_env.so conffile=/etc/security/pam_env.remote.conf
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_environment_configs() {
+    echo -e "${BLUE}Setting up environment configuration files...${NC}"
+    
+    # Local login environment
+    if [ ! -f /etc/security/pam_env.local.conf ]; then
+        cat > /etc/security/pam_env.local.conf << 'LOCALENV'
+#
+# /etc/security/pam_env.local.conf
+# Environment variables for LOCAL CONSOLE login
+#
+# Format: VARIABLE DEFAULT=value
+#
+
+# Indicate this is a local login
+LOGIN_ORIGIN DEFAULT=local
+
+# Local console indicators
+CONSOLE_SESSION DEFAULT=yes
+
+# Enable local features
+LOCAL_ACCESS DEFAULT=true
+
+# Shell prompt indicator
+PS1_INDICATOR DEFAULT=(local)
+
+LOCALENV
+        
+        chmod 644 /etc/security/pam_env.local.conf
+        echo -e "${GREEN}✓ Created /etc/security/pam_env.local.conf${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/security/pam_env.local.conf already exists${NC}"
+    fi
+    
+    # Remote login environment
+    if [ ! -f /etc/security/pam_env.remote.conf ]; then
+        cat > /etc/security/pam_env.remote.conf << 'REMOTEENV'
+#
+# /etc/security/pam_env.remote.conf
+# Environment variables for REMOTE SSH login
+#
+# Format: VARIABLE DEFAULT=value
+#
+
+# Indicate this is a remote login
+LOGIN_ORIGIN DEFAULT=remote
+
+# Remote login indicators
+CONSOLE_SESSION DEFAULT=no
+
+# Disable local features for remote
+LOCAL_ACCESS DEFAULT=false
+
+# Shell prompt indicator
+PS1_INDICATOR DEFAULT=(remote)
+
+# SSH session indicator
+SSH_SESSION DEFAULT=yes
+
+REMOTEENV
+        
+        chmod 644 /etc/security/pam_env.remote.conf
+        echo -e "${GREEN}✓ Created /etc/security/pam_env.remote.conf${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/security/pam_env.remote.conf already exists${NC}"
+    fi
+}
+
+create_environment_tools() {
+    echo -e "${BLUE}Creating environment checking tools...${NC}"
+    
+    cat > /usr/local/bin/check-login-type.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Check current login type and environment
+#
+
+echo "Login Type Information"
+echo "======================"
+echo ""
+
+# Check LOGIN_ORIGIN variable
+if [ -z "$LOGIN_ORIGIN" ]; then
+    echo "LOGIN_ORIGIN: (not set)"
+else
+    echo "LOGIN_ORIGIN: $LOGIN_ORIGIN"
+fi
+
+echo "CONSOLE_SESSION: ${CONSOLE_SESSION:-(not set)}"
+echo "LOCAL_ACCESS: ${LOCAL_ACCESS:-(not set)}"
+echo "SSH_SESSION: ${SSH_SESSION:-(not set)}"
+
+echo ""
+echo "Current user environment:"
+echo "  User: $(whoami)"
+echo "  Shell: $SHELL"
+echo "  TTY: $(tty)"
+echo "  Terminal: ${TERM:-(not set)}"
+
+echo ""
+echo "SSH Detection:"
+if [ -n "$SSH_CONNECTION" ]; then
+    echo "  ✓ SSH connection detected"
+    echo "  SSH_CONNECTION: $SSH_CONNECTION"
+    echo "  LOGIN_TYPE: remote"
+else
+    echo "  ✗ Local login"
+    echo "  LOGIN_TYPE: local"
+fi
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/check-login-type.sh
+    
+    cat > /usr/local/bin/setup-login-prompt.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Setup shell prompt that shows login type
+# Add to ~/.bashrc or ~/.zshrc
+#
+
+cat > ~/.bashrc.d/login-prompt << 'PROMPT'
+#!/bin/bash
+# Show login origin in shell prompt
+
+if [ "$LOGIN_ORIGIN" = "remote" ]; then
+    # Remote login - show (ssh) indicator
+    PS1="\033[1;31m(SSH)\033[0m \u@\h:\w\$ "
+elif [ "$LOGIN_ORIGIN" = "local" ]; then
+    # Local login - show (console) indicator
+    PS1="\033[1;32m(CONSOLE)\033[0m \u@\h:\w\$ "
+else
+    # Fallback
+    PS1="\u@\h:\w\$ "
+fi
+
+PROMPT
+
+echo "✓ Created ~/.bashrc.d/login-prompt"
+echo "Add to ~/.bashrc: source ~/.bashrc.d/login-prompt"
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/setup-login-prompt.sh
+    
+    cat > /usr/local/sbin/verify-pam-env.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Verify PAM environment configuration
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "PAM Environment Configuration Verification"
+echo "==========================================="
+echo ""
+
+echo "PAM Configuration Files:"
+echo "---"
+
+if [ -f /etc/security/pam_env.local.conf ]; then
+    echo "✓ /etc/security/pam_env.local.conf exists"
+    echo "  Variables:"
+    grep -v "^#" /etc/security/pam_env.local.conf | grep -v "^$" | sed 's/^/    /'
+else
+    echo "✗ /etc/security/pam_env.local.conf NOT FOUND"
+fi
+
+echo ""
+
+if [ -f /etc/security/pam_env.remote.conf ]; then
+    echo "✓ /etc/security/pam_env.remote.conf exists"
+    echo "  Variables:"
+    grep -v "^#" /etc/security/pam_env.remote.conf | grep -v "^$" | sed 's/^/    /'
+else
+    echo "✗ /etc/security/pam_env.remote.conf NOT FOUND"
+fi
+
+echo "---"
+echo ""
+
+echo "PAM Service Configuration:"
+for service in login sshd; do
+    if [ -f /etc/pam.d/$service ]; then
+        echo "✓ /etc/pam.d/$service"
+        if grep -q "pam_env.so" /etc/pam.d/$service; then
+            echo "  ✓ pam_env configured"
+            grep "pam_env.so" /etc/pam.d/$service | sed 's/^/    /'
+        else
+            echo "  ✗ pam_env NOT configured"
+        fi
+    else
+        echo "✗ /etc/pam.d/$service NOT FOUND"
+    fi
+done
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/verify-pam-env.sh
+    echo -e "${GREEN}✓ Created environment management tools${NC}"
+}
+
+create_environment_documentation() {
+    echo -e "${BLUE}Creating environment documentation...${NC}"
+    
+    cat > /usr/local/share/doc/environment-login-type-README.txt << 'DOC'
+ENVIRONMENT VARIABLES BY LOGIN TYPE - DOCUMENTATION
+====================================================
+
+PURPOSE:
+Set different environment variables based on whether user is logging in
+via local console or remote SSH connection.
+
+KEY VARIABLE:
+LOGIN_ORIGIN
+- "local" : Physical console or local terminal
+- "remote" : SSH or remote network login
+
+USE CASES:
+
+1. Different Shell Prompts
+   - Local: Show (CONSOLE) prefix in color green
+   - Remote: Show (SSH) prefix in color red
+   - Prevents accidentally running dangerous commands on wrong system
+
+2. Audit Logging
+   - Track login origin in system logs
+   - Important for compliance
+   - Security investigation
+
+3. Conditional Features
+   - Enable X11 forwarding info for SSH
+   - Disable certain features for remote
+   - Show bandwidth warnings for slow connections
+
+4. Security Controls
+   - Different security levels per origin
+   - Additional prompts for sensitive commands
+   - Restrict certain operations to local only
+
+CONFIGURATION FILES:
+
+Local Login: /etc/security/pam_env.local.conf
+- Sets LOGIN_ORIGIN=local
+- Can set other local-specific variables
+
+Remote Login: /etc/security/pam_env.remote.conf
+- Sets LOGIN_ORIGIN=remote
+- Can set other remote-specific variables
+
+VARIABLES PROVIDED:
+
+Standard Variables:
+- LOGIN_ORIGIN : "local" or "remote"
+- CONSOLE_SESSION : "yes" (local) or "no" (remote)
+- LOCAL_ACCESS : "true" (local) or "false" (remote)
+- PS1_INDICATOR : "(local)" or "(remote)"
+
+SSH Variables (remote only):
+- SSH_SESSION : "yes"
+
+ACCESSING IN SCRIPTS:
+
+Bash:
+#!/bin/bash
+if [ "$LOGIN_ORIGIN" = "remote" ]; then
+    echo "Remote login detected"
+else
+    echo "Local console login"
+fi
+
+Shell prompt (.bashrc):
+if [ "$LOGIN_ORIGIN" = "remote" ]; then
+    PS1='\033[1;31m(SSH)\033[0m \u@\h:\w\$ '
+fi
+
+Python script:
+import os
+login_type = os.environ.get('LOGIN_ORIGIN', 'unknown')
+print(f"Login from: {login_type}")
+
+Systemd service:
+[Service]
+Environment="LOGIN_ORIGIN=%i"
+
+EXAMPLES:
+
+1. Show login type in prompt
+   check-login-type.sh
+
+2. Setup prompt wrapper
+   setup-login-prompt.sh
+
+3. Verify configuration
+   sudo verify-pam-env.sh
+
+INTEGRATION EXAMPLES:
+
+1. SSH Warning Banner
+   #!/bin/bash
+   if [ "$LOGIN_ORIGIN" = "remote" ]; then
+       echo "⚠ SECURITY WARNING: You are logged in remotely via SSH"
+       echo "  Be careful with commands and data transmission"
+   fi
+
+2. Backup Prevention (local only)
+   #!/bin/bash
+   if [ "$LOGIN_ORIGIN" != "local" ]; then
+       echo "Error: Backups only allowed from local console"
+       exit 1
+   fi
+
+3. Performance Warning
+   #!/bin/bash
+   if [ "$LOGIN_ORIGIN" = "remote" ]; then
+       echo "Slow connection detected. Operations may take longer."
+       sleep 1  # Give user time to read warning
+   fi
+
+4. Audit Logging
+   #!/bin/bash
+   logger -t login "$USER logged in from $LOGIN_ORIGIN"
+
+TESTING:
+
+1. Test local environment:
+   - Login via physical console or local terminal
+   - Run: echo $LOGIN_ORIGIN
+   - Should output: local
+
+2. Test remote environment:
+   - SSH into system
+   - Run: echo $LOGIN_ORIGIN
+   - Should output: remote
+
+3. Check all variables:
+   - check-login-type.sh
+   - Compare local vs SSH output
+
+TROUBLESHOOTING:
+
+1. LOGIN_ORIGIN not set:
+   - Verify PAM configuration in /etc/pam.d/login and /etc/pam.d/sshd
+   - Check that pam_env.so is configured correctly
+   - Verify conf files exist and have correct permissions
+   - Restart shell/login session
+
+2. Wrong value:
+   - Check which conf file is being used
+   - Review PAM service configuration
+   - Test directly: ssh user@localhost
+
+3. Not inheriting to child processes:
+   - Parent shell must export the variable: export LOGIN_ORIGIN
+   - Check with: printenv | grep LOGIN_ORIGIN
+
+SECURITY CONSIDERATIONS:
+
+1. Env variables can be modified by user
+   - Don't rely solely on for security
+   - Use for convenience, not security decisions
+
+2. Might expose login information
+   - In some environments, showing (SSH) prefix might indicate remote access
+   - Consider your security policy
+
+3. Best Practices:
+   - Use for UX improvements (prompts, warnings)
+   - Use for audit logging
+   - Don't use for critical access control
+
+ADVANCED CONFIGURATIONS:
+
+1. Custom Variables
+   Add to pam_env.*.conf:
+   MY_FEATURE DEFAULT=enabled  (for local)
+   MY_FEATURE DEFAULT=disabled (for remote)
+
+2. Conditional Features
+   if [ "$LOCAL_ACCESS" = "true" ]; then
+       # Enable local-only features
+   fi
+
+3. Combining with SSH Config
+   ~/.ssh/config can add environment variables for SSH
+   Combined with PAM env creates layered configuration
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/environment-login-type-README.txt
+    echo -e "${GREEN}✓ Created environment documentation${NC}"
+}
+
+main() {
+    configure_pam
+    setup_environment_configs
+    create_environment_tools
+    create_environment_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Environment Login Type Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Configuration files:"
+    echo "  - Local conf: /etc/security/pam_env.local.conf"
+    echo "  - Remote conf: /etc/security/pam_env.remote.conf"
+    echo ""
+    echo "Management commands:"
+    echo "  - Check login type: check-login-type.sh"
+    echo "  - Setup prompt: setup-login-prompt.sh"
+    echo "  - Verify config: sudo verify-pam-env.sh"
+    echo ""
+    echo "Key environment variables:"
+    echo "  - LOGIN_ORIGIN: 'local' or 'remote'"
+    echo "  - CONSOLE_SESSION: 'yes' or 'no'"
+    echo "  - LOCAL_ACCESS: 'true' or 'false'"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review template: cat /tmp/pam-env-snippet.txt"
+    echo "2. Add PAM config to /etc/pam.d/login and /etc/pam.d/sshd"
+    echo "3. Test: check-login-type.sh"
+    echo "4. Test SSH: ssh localhost check-login-type.sh"
+    echo ""
+}
+
+main "$@"

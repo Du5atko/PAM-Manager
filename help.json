@@ -1,0 +1,120 @@
+{
+  "System Information": {
+    "title": "System Information",
+    "description": "Displays detailed information about the Linux system configuration and PAM services.",
+    "sections": [
+      {
+        "heading": "Overview",
+        "content": "The System Information tab provides a comprehensive view of the current system's PAM configuration, including:\n\n• System name and kernel version\n• PAM version and configuration directory\n• List of all installed PAM services\n• Module categories and availability\n• Platform compatibility information"
+      },
+      {
+        "heading": "Available Modules",
+        "content": "Browse through all installed PAM modules on your system. Each module is categorized by type (authentication, account management, session, password) and platform support.\n\nClick on a module to view detailed information about its capabilities, security impact, and supported platforms."
+      },
+      {
+        "heading": "Module Details",
+        "content": "For each selected module, you can see:\n\n• Module name and current status\n• Category (authentication, account, session, password)\n• Supported facilities (auth, account, session, password)\n• Applicable platforms (Linux, BSD, Solaris, etc.)\n• Maintenance status and security impact rating"
+      },
+      {
+        "heading": "Button Enable all modules / Enable supported modules",
+        "content": "The button changes the support for modules. Enable supported modules will only enable modules supported on this platform by the distribution or developer, which also have an active development cycle (Maintained). Enable all modules, on the other hand, will enable all modules without restrictions."
+      },
+      {
+        "heading": "Vocabulary",
+        "content": "PAM Management use specific structure, to allow more flexible management of interface:\n• Policy Fragment / Fragment: Defines a module and its parametric configuration, which is saved as a fragment under a specific name for further use. Fragments are used only as part of Elements.\n• Policy Element / Element: Describes the method and order of fragments within the minimum definition. An element should be used for a single record, but can also be used to structure more complex structures. By default, it defines the use of fragments, which must have a prefixed interface and control flag, or may use extended control. Furthermore, for the purposes of creating structures, it is possible to include individual services, which can be inserted using include or substack.\n• Service: As a rule, this is a file that is stored in the /etc/pam.d directory under the name of the service. However, some files are also used as a generic building block. The file itself contains either comments or policy elements, i.e. control and evaluation of the activities of individual modules.\n• Template: Templates intended for insertion by the administrator. Nobody wants to develop things over and over again."
+      }
+    ]
+  },
+  "Policy Fragment": {
+    "title": "Policy Fragment Management",
+    "description": "Create and manage reusable PAM module configurations (fragments) that can be shared across multiple services.",
+    "sections": [
+      {
+        "heading": "What is a Fragment?",
+        "content": "A Policy Fragment is a reusable configuration snippet for a single PAM module line. Instead of repeating the same module configuration in multiple service files, create a fragment once and reference it multiple times. This mean, the same fragment could be used for auth, account, session or password interface. A common authentication fragment could be used with different interface and control.\n\nExample:\n• auth      required    pam_unix.so\n• account   required    pam_unix.so\n• password  required    pam_unix.so\n• session   required    pam_unix.so\n\nThis mean:\n• interface    control    [fragment]"
+      },
+      {
+        "heading": "Creating Fragments",
+        "content": "1. Select a module from the module list\n2. Enter fragment name (e.g., 'Minimum password lenght')\n3. Enter module parameters (if any)\n4. Click 'Create Fragment' or 'Import Fragment(s)' to add to repository"
+      },
+      {
+        "heading": "Editing Fragments",
+        "content": "• Select an existing fragment from the list\n• Modify parameters or settings in the editor\n• Fragment changes affect all services using that fragment\n• Use 'Save Definitions' to persist changes."
+      },
+      {
+        "heading": "Fragment Parameters",
+        "content": "Parameters control module behavior. Types include:\n\n• Boolean flags (no value): 'quiet', 'try_first_pass'\n• Key-value pairs: 'timeout=30', 'ldap_uri=ldap://server'\n• Text parameters: descriptions or complex settings\n\nParameters are preserved in their original order from the system configuration."
+      }
+    ]
+  },
+  "Policy Element": {
+    "title": "Policy Element Management",
+    "description": "Combine one or multiple fragments into service-specific configurations called Elements.",
+    "sections": [
+      {
+        "heading": "What is an Element?",
+        "content": "A Policy Element is a service-specific grouping of one or more fragments with specific control. That defines the authentication flow for a particular PAM service. Element combines speficic interface (auth, account, session or password) and standard control flag for modules (required, requisite, sufficient, optional) or service (include, substack). Also extended syntax is available for modules. All of those are accesible through PAM Command Builder"
+      },
+      {
+        "heading": "Creating Elements",
+        "content": "1. Select a PAM service from the available services\n2. Choose the interface (auth, account, session, password)\n3. Select fragments to combine\n4. Arrange fragments in execution order (top to bottom)\n5. Set control flow (how module results affect overall authentication)\n6. Click 'Create Element' to save"
+      },
+      {
+        "heading": "Element Properties",
+        "content": "Each element has:\n\n• Interface type (auth, account, session, password)\n• Ordered list of fragments or for specific case services\n• Control flags determining behavior on success/failure\n• Fallback and include directives"
+      },
+      {
+        "heading": "Best Practices",
+        "content": "• Arrange elements in logical order: authentication first, then account checks, session setup, password changes\n• Use 'sufficient' flags for early exit on success\n• Use 'requisite' for critical checks that must succeed\n• Test elements in non-critical services first\n• Always backup original /etc/pam.d before major changes"
+      }
+    ]
+  },
+  "Service Definition": {
+    "title": "Service Definition & Utility",
+    "description": "Populate policy elements and design complete PAM service definitions.",
+    "sections": [
+      {
+        "heading": "Service Definitions Overview",
+        "content": "Service Definitions represent complete, ready-to-use PAM configurations loaded from /etc/pam.d/. Each service file defines the authentication flow for system services like:\n\n• login - Console login authentication\n• sshd - SSH daemon authentication\n• sudo - Privilege escalation\n• system-auth - Common authentication base"
+      },
+      {
+        "heading": "Create Fragment or Element from Service",
+        "content": "The 'Create From Line' feature lets you quickly extract parts of imported service files:\n\n1. Select the line number from imported configuration\n2. Click 'Create Fragment' to extract that PAM line as a reusable fragment\n3. Or click 'Create Element' to group related lines\n\nThis accelerates migration of existing configurations into reusable components."
+      },
+      {
+        "heading": "Import Operations",
+        "content": "Three import strategies:\n\n• 'Import Fragment(s)' - Extract individual PAM lines as fragments\n• 'Import Element(s)' - Group lines into service-specific elements\n• 'Import Complete Settings' - Full import of all 32 PAM services with deduplication\n\nEach operation includes automatic backup protection - if import fails, configuration is restored."
+      },
+      {
+        "heading": "Export & Backup",
+        "content": "1. 'Export' - Generate new /etc/pam.d directory with current configuration (creates ~/etc/pam.d/)\n2. 'Save Definitions' - Save fragments and elements to config manager\n3. 'Save Service Template' - Create reusable template from current service configuration\n\nAll exports are 100% compatible with system PAM requirements."
+      }
+    ]
+  },
+  "Template Manager": {
+    "title": "Template Management",
+    "description": "Manage reusable configuration templates for Fragments, Elements, Services, and integration Bundles.",
+    "sections": [
+      {
+        "heading": "What are Templates?",
+        "content": "Templates are pre-configured starting points for common security scenarios:\n\n• Fragment Templates - Individual module configurations (e.g., 'google_authenticator')\n• Element Templates - Multi-module flows (e.g., 'mfa_login')\n• Service Templates - Complete service definitions (e.g., 'system-and-yubikey')\n• Bundle Templates - Integration packages combining fragments and elements for specific use cases"
+      },
+      {
+        "heading": "Using Fragment Templates",
+        "content": "1. Select Type: 'Fragment'\n2. Choose a template (e.g., 'google_authenticator')\n3. Review and customize parameters\n4. Click 'Load Template' to create new fragment\n5. Adjust service name, module name, or parameters if needed\n6. Save the fragment"
+      },
+      {
+        "heading": "Using Service Templates",
+        "content": "1. Select Type: 'Service'\n2. Choose a service template (e.g., 'system-and-yubikey' for MFA with Yubikey)\n3. Template shows complete service configuration\n4. Preview includes all fragments and their order\n5. Click 'Load Template' to apply to a new service or overwrite existing\n6. Export and test in non-production environment first"
+      },
+      {
+        "heading": "Creating Custom Templates",
+        "content": "1. Configure and test fragments or services\n2. After successful testing, click 'Save Service Template' (or create fragment template)\n3. Give template a meaningful name with '-' separators\n4. Add description for other users\n5. Templates are saved to appropriate .Templates directory\n6. Share with team or backup for migration to other systems"
+      },
+      {
+        "heading": "Template Recommendations",
+        "content": "Common use cases:\n\n• Biometric Authentication (fingerprint, face recognition)\n• Multi-Factor Authentication (MFA) - password + OTP/U2F\n• Smart Card Authentication\n• LDAP/Active Directory Integration\n• SSH Public Key Only (no passwords)\n• Risk-Based Authentication (location, time-based)\n• Emergency/Recovery Access\n\nStart with built-in templates and customize as needed."
+      }
+    ]
+  }
+}

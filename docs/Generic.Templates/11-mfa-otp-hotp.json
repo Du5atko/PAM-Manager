@@ -1,0 +1,55 @@
+{
+  "bundle_name": "11-mfa-otp-hotp",
+  "version": "1.0.0",
+  "title": "Multi-Factor Authentication with OTP/HOTP",
+  "description": "Two-factor authentication using OTP (One-Time Password) or HOTP (HMAC-based OTP) with pam_oath module",
+  "author": "PAM Manager v9.0",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": ["login", "sshd"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {
+      "packages": ["libpam-oath", "oathtool"],
+      "package_manager": "apt"
+    },
+    "fedora_rhel": {
+      "packages": ["pam-oath", "oathtool"],
+      "package_manager": "dnf"
+    },
+    "alpine": {
+      "packages": ["oath-toolkit"],
+      "package_manager": "apk"
+    },
+    "arch": {
+      "packages": ["oath-toolkit"],
+      "package_manager": "pacman"
+    }
+  },
+  "configuration": {
+    "auth_stack": [
+      "auth required pam_unix.so",
+      "auth required pam_oath.so usersfile=/etc/users.oath window=10"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["oath-toolkit", "pam_oath module"],
+    "pam_modules": ["pam_unix", "pam_oath"],
+    "configuration_files": ["/etc/users.oath"],
+    "mobile_apps": [
+      "Google Authenticator (HOTP/TOTP)",
+      "Microsoft Authenticator (TOTP)",
+      "Aegis Authenticator (HOTP/TOTP)",
+      "FreeOTP (HOTP/TOTP)"
+    ]
+  },
+  "notes": {
+    "secret_format": "username: HOTP/TOTP secret",
+    "example_file": "/etc/users.oath must contain: HOTP user - HXDP5JQVJVGVYQKQ",
+    "supported_apps": "Any OATH-compatible authenticator app",
+    "window": "window=10 allows time drift for TOTP"
+  },
+  "script_file": "11-mfa-otp-hotp.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

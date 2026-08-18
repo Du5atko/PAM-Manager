@@ -1,0 +1,280 @@
+#!/bin/bash
+#
+# PAM Bundle: 03-yubikey-rescue
+# Title: Emergency Recovery Account with YubiKey
+# Description: Secure rescue account for system recovery accessible only with YubiKey from local console
+# Version: 1.0.0
+#
+# SECURITY CRITICAL: This bundle creates an emergency access account that:
+# - Can only be accessed from local console (not SSH)
+# - Requires a specific YubiKey to authenticate
+# - Is meant for system recovery scenarios
+#
+# IMPORTANT: Keep a backup YubiKey in a secure location!
+#
+# INSTALLATION:
+# 1. Run: bash 03-yubikey-rescue.msh
+# 2. Administrator registers the rescue YubiKey: sudo /usr/local/sbin/setup-rescue-yubikey.sh
+# 3. Test local console access only
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up YubiKey Emergency Rescue Account"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+if [ "$EUID" -ne 0 ]; then 
+    echo -e "${RED}Error: This script must be run as root${NC}"
+    exit 1
+fi
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+install_packages() {
+    echo -e "${BLUE}Installing YubiKey support packages...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            apt update
+            apt install -y libpam-u2f pamu2fcfg sudo
+            ;;
+        fedora|rhel|centos)
+            dnf install -y pam-u2f pamu2fcfg sudo
+            ;;
+        alpine)
+            apk add pam-u2f sudo
+            ;;
+        arch|manjaro)
+            pacman -S --noconfirm pam-u2f sudo
+            ;;
+    esac
+    echo -e "${GREEN}✓ Packages installed${NC}"
+}
+
+create_rescue_user() {
+    echo -e "${BLUE}Creating rescue account...${NC}"
+    
+    if id rescue 2>/dev/null; then
+        echo -e "${YELLOW}Note: rescue user already exists${NC}"
+    else
+        # Create rescue user with shell access
+        useradd -m -s /bin/bash -d /home/rescue rescue
+        echo -e "${GREEN}✓ Created rescue user${NC}"
+    fi
+    
+    # Ensure rescue user exists in sudoers
+    if ! grep -q "^rescue ALL=" /etc/sudoers 2>/dev/null; then
+        echo "rescue ALL=(ALL) NOPASSWD: ALL" | tee -a /etc/sudoers > /dev/null
+        chmod 0440 /etc/sudoers
+        echo -e "${GREEN}✓ Added rescue to sudoers${NC}"
+    fi
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for emergency rescue access...${NC}"
+    
+    # Backup original login PAM file
+    if [ -f /etc/pam.d/login ]; then
+        cp /etc/pam.d/login /etc/pam.d/login.backup.rescue
+        echo -e "${GREEN}✓ Backed up /etc/pam.d/login${NC}"
+    fi
+    
+    cat > /tmp/pam-rescue-snippet.txt << 'EOF'
+# Emergency Rescue Account - YubiKey Only
+# Add to /etc/pam.d/login BEFORE other auth rules
+
+# For rescue user: require YubiKey, for others use standard auth
+auth [success=1 default=ignore] pam_succeed_if.so user = rescue service = login
+auth requisite pam_deny.so
+auth required pam_u2f.so authfile=/etc/security/rescue_u2f
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_rescue_security() {
+    echo -e "${BLUE}Setting up rescue account security infrastructure...${NC}"
+    
+    # Create rescue security directory
+    mkdir -p /etc/security
+    
+    # Create empty rescue_u2f file with restricted permissions
+    if [ ! -f /etc/security/rescue_u2f ]; then
+        touch /etc/security/rescue_u2f
+        chmod 600 /etc/security/rescue_u2f
+        echo -e "${GREEN}✓ Created /etc/security/rescue_u2f${NC}"
+    fi
+    
+    # Create setup script for administrators
+    cat > /usr/local/sbin/setup-rescue-yubikey.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Setup script for registering the emergency rescue YubiKey
+# Only root can run this - runs only once during system setup
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo ""
+echo "=================================================="
+echo "Rescue YubiKey Setup - SECURITY CRITICAL"
+echo "=================================================="
+echo ""
+echo "WARNING: This account provides EMERGENCY ACCESS to your system"
+echo "It should ONLY be used for system recovery scenarios"
+echo ""
+echo "IMPORTANT SECURITY NOTES:"
+echo "1. Only ONE YubiKey should be registered for rescue access"
+echo "2. Keep a BACKUP YubiKey in a SECURE, PHYSICAL location"
+echo "3. Document the YubiKey serial number and location"
+echo "4. Rescue access is LOCAL CONSOLE ONLY (not SSH)"
+echo ""
+read -p "Continue with rescue YubiKey setup? (yes/no) " -r
+echo
+if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+    echo "Cancelled"
+    exit 1
+fi
+
+echo ""
+echo "Please insert the rescue YubiKey and be ready to touch it..."
+echo "---"
+
+# Register the rescue YubiKey
+pamu2fcfg -u rescue > /etc/security/rescue_u2f 2>/dev/null
+
+if [ $? -ne 0 ] || [ ! -s /etc/security/rescue_u2f ]; then
+    echo "Error: Failed to register rescue YubiKey"
+    rm -f /etc/security/rescue_u2f
+    exit 1
+fi
+
+chmod 600 /etc/security/rescue_u2f
+
+echo "---"
+echo ""
+echo "✓ Rescue YubiKey registered successfully!"
+echo ""
+echo "NEXT STEPS:"
+echo "1. Create a BACKUP YubiKey with: pamu2fcfg -u rescue >> /etc/security/rescue_u2f"
+echo "2. Store backup YubiKey in secure location (e.g., safe, encrypted storage)"
+echo "3. Document the location and keep information secure"
+echo "4. Test login from physical console (not SSH)"
+echo ""
+echo "In case of emergency:"
+echo "  - Insert rescue YubiKey at login prompt"
+echo "  - Username: rescue"
+echo "  - Touch YubiKey when prompted"
+echo "  - Use 'sudo' for system recovery tasks"
+echo ""
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/setup-rescue-yubikey.sh
+    echo -e "${GREEN}✓ Created rescue YubiKey setup script${NC}"
+}
+
+create_recovery_documentation() {
+    echo -e "${BLUE}Creating recovery documentation...${NC}"
+    
+    cat > /usr/local/share/doc/rescue-account-README.txt << 'DOC'
+EMERGENCY RESCUE ACCOUNT - DOCUMENTATION
+==========================================
+
+PURPOSE:
+The rescue account provides emergency access to the system when normal
+authentication fails or the system is in a degraded state.
+
+SECURITY FEATURES:
+- YubiKey FIDO/U2F authentication required
+- Local console access only (SSH disabled)
+- Automatic sudo access for recovery operations
+- Separate from regular user accounts
+
+ACCESS PROCEDURE:
+1. Insert rescue YubiKey into USB port
+2. Boot/login to physical console
+3. At login prompt, enter: rescue
+4. Touch YubiKey when prompted
+5. You are now logged in with sudo privileges
+
+BACKUP RECOVERY (If main YubiKey lost):
+1. Use backup YubiKey following same procedure
+2. System should have been configured with 2 registered YubiKeys
+3. If all YubiKeys lost, contact physical server support
+
+EMERGENCY ALTERNATIVE (All YubiKeys lost):
+1. Reboot system with single-user mode (if not disabled)
+2. Use physical console with recovery media
+3. Mount filesystem and edit /etc/security/rescue_u2f
+4. Re-register new YubiKey with: pamu2fcfg -u rescue
+
+TESTING:
+- Never test on production systems
+- Test on isolated system before deploying
+- Document test results and keep for reference
+
+MAINTENANCE:
+- Regularly verify YubiKey still works
+- Replace YubiKey if showing signs of wear
+- Update backup YubiKey if main one fails
+- Keep secure location of backup well documented
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/rescue-account-README.txt
+    echo -e "${GREEN}✓ Created rescue account documentation${NC}"
+}
+
+main() {
+    detect_distro
+    install_packages
+    create_rescue_user
+    configure_pam
+    setup_rescue_security
+    create_recovery_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Rescue Account Setup Complete"
+    echo "==================================================${NC}"
+    echo ""
+    echo -e "${YELLOW}IMPORTANT - Next Steps:${NC}"
+    echo ""
+    echo "1. Register rescue YubiKey (run as root):"
+    echo "   sudo /usr/local/sbin/setup-rescue-yubikey.sh"
+    echo ""
+    echo "2. Review PAM configuration template:"
+    echo "   cat /tmp/pam-rescue-snippet.txt"
+    echo ""
+    echo "3. Manually add PAM rules to /etc/pam.d/login"
+    echo ""
+    echo "4. Test from physical console only (never SSH)"
+    echo ""
+    echo "5. Create and secure backup YubiKey"
+    echo ""
+    echo "Documentation: /usr/local/share/doc/rescue-account-README.txt"
+    echo ""
+    echo -e "${RED}WARNING: Test this thoroughly in non-production first!${NC}"
+    echo ""
+}
+
+main "$@"

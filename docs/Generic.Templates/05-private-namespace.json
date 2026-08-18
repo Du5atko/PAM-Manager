@@ -1,0 +1,38 @@
+{
+  "bundle_name": "05-private-namespace",
+  "version": "1.0.0",
+  "title": "Private Mount Namespace per User",
+  "description": "Create private mount namespace for each user session. Each user gets isolated /tmp and /var/tmp preventing access to other users' temporary files",
+  "author": "PAM Manager v9.0",
+  "category": "session",
+  "security_level": "high",
+  "pam_services": ["login", "sshd"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": ["libpam-namespaces"], "package_manager": "apt"},
+    "fedora_rhel": {"packages": ["pam-namespaces"], "package_manager": "dnf"},
+    "alpine": {"packages": ["pam-namespace"], "package_manager": "apk"},
+    "arch": {"packages": ["pam-namespace"], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "session_stack": [
+      "session required pam_namespace.so"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Linux kernel 3.8+ (namespace support)", "pam_namespace module"],
+    "pam_modules": ["pam_namespace"],
+    "configuration_files": ["/etc/security/namespace.conf"],
+    "requirements": "Administrator must configure /etc/security/namespace.conf"
+  },
+  "notes": {
+    "isolation": "Each user session gets isolated /tmp and /var/tmp",
+    "benefit": "Prevents users from accessing other users' temporary files",
+    "configuration": "/etc/security/namespace.conf must contain mount point definitions",
+    "performance": "Minimal overhead, improves security significantly",
+    "container_friendly": "Works well in containers and VMs"
+  },
+  "script_file": "05-private-namespace.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

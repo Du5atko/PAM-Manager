@@ -1,0 +1,359 @@
+#!/bin/bash
+#
+# PAM Bundle: 06-time-restrictions
+# Title: Login Time Restrictions
+# Description: Restrict user login times to specific days/hours
+# Version: 1.0.0
+#
+# This bundle restricts when users can log in based on:
+# - Day of week (Monday-Sunday)
+# - Time window (hours and minutes)
+# - Specific users or groups
+#
+# Examples:
+# - Regular users: 8am-6pm Monday-Friday
+# - Contractors: 9am-5pm specific days
+# - Developers: 24/7 access
+#
+# INSTALLATION:
+# 1. Run: bash 06-time-restrictions.msh
+# 2. Configure /etc/security/time.conf with your policies
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Login Time Restrictions Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for time restrictions...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.time
+        fi
+    done
+    
+    cat > /tmp/pam-time-snippet.txt << 'EOF'
+# Login Time Restrictions Configuration
+# Add to /etc/pam.d/login and /etc/pam.d/sshd in account stack
+
+account required pam_time.so
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_time_config() {
+    echo -e "${BLUE}Setting up time restriction configuration...${NC}"
+    
+    if [ ! -f /etc/security/time.conf ]; then
+        cat > /etc/security/time.conf << 'TIMECONF'
+#
+# /etc/security/time.conf
+# 
+# Time-based login restrictions for PAM
+#
+# Format:
+# service;user/group;tty/hostname;day-of-week HH:MM-HH:MM
+#
+# service: login, sshd, sudo, etc.
+# user/group: username or @groupname
+# tty/hostname: tty*, *, or specific hostname
+# day-of-week: Mo|Tu|We|Th|Fr|Sa|Su|Al (Monday-Sunday or All)
+#
+# Examples:
+#
+
+# Allow all users local login 8am-6pm every day
+# login;*;tty*;Al0800-1800
+
+# Allow developers SSH access 24/7
+# sshd;@developers;*;Al0000-2400
+
+# Allow contractors SSH access Monday-Friday 9am-5pm
+# sshd;@contractors;*;MoTuWeThFr0900-1700
+
+# Allow admin SSH from specific host 24/7
+# sshd;root;192.168.1.10;Al0000-2400
+
+# Deny SSH access to guest user
+# sshd;guest;*;-
+
+# Example configuration:
+#
+# Regular users - local terminal only, 8am-6pm weekdays
+login;user1;tty*;MoTuWeThFr0800-1800
+
+# System administrators - 24/7 access
+# login;@admin;*;Al0000-2400
+
+# Contractors - weekdays 9am-5pm
+# sshd;@contractors;*;MoTuWeThFr0900-1700
+
+TIMECONF
+        
+        chmod 644 /etc/security/time.conf
+        echo -e "${GREEN}✓ Created /etc/security/time.conf${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/security/time.conf already exists${NC}"
+    fi
+}
+
+create_time_tools() {
+    echo -e "${BLUE}Creating time restriction management tools...${NC}"
+    
+    cat > /usr/local/sbin/check-time-policy.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Check current login time policies
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "Current Login Time Policies"
+echo "==========================="
+echo ""
+
+if [ ! -f /etc/security/time.conf ]; then
+    echo "No time.conf file found"
+    exit 0
+fi
+
+# Show active policies (non-comment lines)
+echo "Active policies:"
+echo "---"
+grep -v "^#" /etc/security/time.conf | grep -v "^$" | while read line; do
+    echo "  $line"
+done
+
+echo "---"
+echo ""
+
+# Show policy examples
+echo "Policy format reference:"
+echo "  service;user;tty;days HH:MM-HH:MM"
+echo ""
+echo "Examples:"
+echo "  login;user1;tty*;MoTuWeThFr0800-1800"
+echo "  login;@admin;*;Al0000-2400"
+echo "  sshd;@contractors;*;MoTuWeThFr0900-1700"
+echo ""
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/check-time-policy.sh
+    
+    cat > /usr/local/bin/show-current-policies.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Show time policies for specific user
+#
+
+if [ -z "$1" ]; then
+    USER=$(whoami)
+else
+    USER=$1
+fi
+
+echo "Login Time Policy for User: $USER"
+echo "================================="
+echo ""
+
+if [ ! -f /etc/security/time.conf ]; then
+    echo "No time configuration found"
+    exit 0
+fi
+
+# Find policies matching this user
+echo "Applicable policies:"
+grep -v "^#" /etc/security/time.conf | grep -v "^$" | while read line; do
+    # Check if line contains username
+    if echo "$line" | grep -q ";\*;" || echo "$line" | grep -q ";$USER;" || echo "$line" | grep -q ";@.*;" ; then
+        echo "  $line"
+    fi
+done
+
+echo ""
+echo "For more details, run: man time.conf"
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/show-current-policies.sh
+    echo -e "${GREEN}✓ Created time restriction management tools${NC}"
+}
+
+create_time_documentation() {
+    echo -e "${BLUE}Creating time restriction documentation...${NC}"
+    
+    cat > /usr/local/share/doc/time-restrictions-README.txt << 'DOC'
+LOGIN TIME RESTRICTIONS - DOCUMENTATION
+========================================
+
+PURPOSE:
+Control when users are allowed to log in based on day of week and time.
+Useful for:
+- Restricting contractor access to business hours
+- Preventing after-hours logins for certain roles
+- Implementing security policies
+- Separating shift-based access
+
+TIME CONFIGURATION FILE:
+/etc/security/time.conf
+
+FORMAT:
+service;user/group;tty/hostname;day-of-week HH:MM-HH:MM
+
+SERVICE:
+- login     : Local terminal/console login
+- sshd      : SSH login
+- sudo      : Sudo command execution
+- su        : su command execution
+- *         : All services
+
+USER/GROUP:
+- username  : Specific user (e.g., "alice")
+- @groupname: All users in group (e.g., "@contractors")
+- *         : All users
+
+TTY/HOSTNAME:
+- tty*      : Any local terminal
+- *         : Any source (local or remote)
+- hostname  : Specific hostname
+- IP.ADDR   : Specific IP address
+
+DAY-OF-WEEK:
+- Mo, Tu, We, Th, Fr, Sa, Su : Specific days
+- MoTuWeThFr                   : Weekdays
+- Sa-Su                        : Weekend
+- Al                           : All days (00:00-24:00)
+- Al0800-1800                  : All days, 8am-6pm
+
+COMMON POLICIES:
+
+1. Business Hours Only
+   login;user1;tty*;MoTuWeThFr0800-1800
+   Description: User can login local terminal Mon-Fri 8am-6pm
+
+2. Administrator Access
+   login;@admin;*;Al0000-2400
+   Description: Admins can login anytime from any source
+
+3. Contractor Access
+   sshd;@contractors;*;MoTuWeThFr0900-1700
+   Description: Contractors SSH access Mon-Fri 9am-5pm
+
+4. Developer Access
+   sshd;@developers;*;Al0000-2400
+   Description: Developers SSH access 24/7
+
+5. Guest Restrictions
+   login;guest;tty*;MoTuWeThFr1000-1600
+   Description: Guest can login local terminal Mon-Fri 10am-4pm
+
+6. Weekend-Only User
+   login;researcher;tty*;SaSu0000-2400
+   Description: Researcher can login Saturdays and Sundays only
+
+SPECIAL CASES:
+
+Deny All:
+login;user1;*;-
+(User cannot log in at all)
+
+Deny Specific Service:
+sshd;user1;*;-
+(User cannot SSH, but can login locally)
+
+Night Shift:
+login;night_shift;tty*;MoTuWeThFr2000-0600
+(20:00 to 06:00 next day)
+
+TESTING:
+
+1. Check current policies:
+   sudo check-time-policy.sh
+
+2. Check user's applicable policies:
+   show-current-policies.sh alice
+
+3. Test login attempt outside allowed time:
+   - Should see: "Authentication failure"
+   - Check logs: /var/log/auth.log
+
+TROUBLESHOOTING:
+
+1. User claims they can't login at allowed time:
+   - Verify timezone: date +%Z
+   - Check PAM includes pam_time.so
+   - Check /etc/security/time.conf syntax
+   - Verify user matches policy
+
+2. Format errors:
+   - Missing semicolons: service;user;tty;day
+   - Invalid day format: use MoTuWe not "Monday Tuesday"
+   - Invalid time format: use 0800 not 8:00
+
+3. Performance impact:
+   - Minimal (PAM checks policy during auth)
+   - No impact on already-logged-in sessions
+   - No service restart needed for changes
+
+EDITING THE CONFIGURATION:
+
+Never edit manually in production. Use:
+1. Create new policy file
+2. Test thoroughly
+3. Backup current file: cp time.conf time.conf.backup
+4. Deploy new file
+5. Monitor for issues
+
+POLICY AUDIT:
+
+Review policies regularly:
+- Who needs which access levels?
+- Are policies still appropriate?
+- Remove obsolete contractor access
+- Update working hours as needed
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/time-restrictions-README.txt
+    echo -e "${GREEN}✓ Created time restriction documentation${NC}"
+}
+
+main() {
+    configure_pam
+    setup_time_config
+    create_time_tools
+    create_time_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Login Time Restrictions Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Configuration file: /etc/security/time.conf"
+    echo ""
+    echo "Management commands:"
+    echo "  - Check policies: sudo check-time-policy.sh"
+    echo "  - Check user policy: show-current-policies.sh <username>"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review template: cat /tmp/pam-time-snippet.txt"
+    echo "2. Add PAM config to /etc/pam.d/login and /etc/pam.d/sshd"
+    echo "3. Edit policies: /etc/security/time.conf"
+    echo "4. Test policies with actual logins"
+    echo ""
+}
+
+main "$@"

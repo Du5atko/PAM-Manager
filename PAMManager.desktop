@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=2.0
+Type=Application
+Name=PAM Manager
+Comment=PAM configuration management graphical interface
+Exec=./PAMManager.py
+Icon=utilities-system
+Terminal=false
+Categories=System;Settings;
+Keywords=PAM;authentication;security;configuration;
+X-GNOME-Settings-Panel=system
+X-GNOME-Bugzilla-Bugzilla=GNOME
+X-GNOME-Bugzilla-Product=gnome-control-center
+X-GNOME-Bugzilla-Component=General
+X-GNOME-Bugzilla-Version=

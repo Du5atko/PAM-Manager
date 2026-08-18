@@ -1,0 +1,37 @@
+{
+  "bundle_name": "04-motd-userspecific",
+  "version": "1.0.0",
+  "title": "Per-User Message of the Day",
+  "description": "Display system MOTD followed by user-specific MOTD from ~/.motd if file exists",
+  "author": "PAM Manager v9.0",
+  "category": "session",
+  "security_level": "low",
+  "pam_services": ["login", "sshd"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": [], "package_manager": "apt"},
+    "fedora_rhel": {"packages": [], "package_manager": "dnf"},
+    "alpine": {"packages": [], "package_manager": "apk"},
+    "arch": {"packages": [], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "session_stack": [
+      "session optional pam_motd.so",
+      "session optional pam_exec.so /usr/local/sbin/pam-user-motd.sh"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Standard PAM libraries"],
+    "pam_modules": ["pam_motd", "pam_exec"],
+    "user_action": "Users can create ~/.motd file"
+  },
+  "notes": {
+    "system_motd": "Standard system MOTD from /etc/motd or /etc/motd.d/",
+    "user_motd": "Each user can create ~/.motd for personal message",
+    "format": "Plain text files",
+    "use_cases": "Status messages, reminders, important announcements per user"
+  },
+  "script_file": "04-motd-userspecific.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

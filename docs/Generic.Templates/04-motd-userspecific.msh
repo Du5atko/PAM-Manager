@@ -1,0 +1,187 @@
+#!/bin/bash
+#
+# PAM Bundle: 04-motd-userspecific
+# Title: Per-User Message of the Day
+# Description: Display system MOTD followed by per-user personal messages
+# Version: 1.0.0
+#
+# This bundle displays:
+# 1. System-wide MOTD (/etc/motd)
+# 2. Per-user MOTD (~/.motd) if user has created one
+#
+# Users can customize their login greeting by creating ~/.motd file
+#
+# INSTALLATION:
+# 1. Run: bash 04-motd-userspecific.msh
+# 2. Users create: echo "Custom message" > ~/.motd
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Per-User MOTD Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for per-user MOTD...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.motd
+        fi
+    done
+    
+    cat > /tmp/pam-motd-snippet.txt << 'EOF'
+# Per-User MOTD Configuration
+# Add to /etc/pam.d/login and /etc/pam.d/sshd
+
+session optional pam_motd.so
+session optional pam_exec.so /usr/local/sbin/pam-user-motd.sh
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+create_user_motd_script() {
+    echo -e "${BLUE}Creating user MOTD display script...${NC}"
+    
+    cat > /usr/local/sbin/pam-user-motd.sh << 'SCRIPT'
+#!/bin/sh
+#
+# Display user-specific MOTD if exists
+# This script is called by pam_exec during session setup
+#
+# Each user can customize their login message by creating ~/.motd
+#
+
+# Check if user has a personal MOTD file
+if [ -r "$HOME/.motd" ]; then
+    # Display the user's custom MOTD
+    cat "$HOME/.motd"
+fi
+
+# Always exit successfully
+exit 0
+
+SCRIPT
+    
+    chmod 755 /usr/local/sbin/pam-user-motd.sh
+    echo -e "${GREEN}✓ User MOTD script created: /usr/local/sbin/pam-user-motd.sh${NC}"
+}
+
+create_example_motd() {
+    echo -e "${BLUE}Creating example MOTD files...${NC}"
+    
+    # System MOTD example
+    cat > /tmp/motd-example.txt << 'EOF'
+================================================================================
+                      Welcome to the System
+================================================================================
+
+System Status:
+- Kernel: Linux
+- Platform: Production Environment
+- Admin Contact: sysadmin@example.com
+
+Please report any issues to the system administrator.
+================================================================================
+EOF
+    echo -e "${GREEN}✓ Example system MOTD created: /tmp/motd-example.txt${NC}"
+    
+    # User MOTD example
+    cat > /tmp/user-motd-example.txt << 'EOF'
+================================================================================
+                   Welcome Back, [USERNAME]!
+================================================================================
+
+Personal Messages:
+- You have 3 new messages in your email
+- Your project deadline is tomorrow
+- System maintenance scheduled for 2026-08-17 02:00 UTC
+
+Have a great day!
+================================================================================
+EOF
+    echo -e "${GREEN}✓ Example user MOTD created: /tmp/user-motd-example.txt${NC}"
+}
+
+create_user_motd_template() {
+    echo -e "${BLUE}Creating user MOTD management tools...${NC}"
+    
+    cat > /usr/local/bin/setup-user-motd.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Setup script for users to customize their MOTD
+# Usage: setup-user-motd.sh
+#
+
+echo "User MOTD Setup"
+echo "==============="
+echo ""
+
+if [ -f ~/.motd ]; then
+    echo "You already have a custom MOTD:"
+    echo "---"
+    cat ~/.motd
+    echo "---"
+    echo ""
+    read -p "Do you want to edit it? (y/n) " -r
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cancelled"
+        exit 0
+    fi
+else
+    echo "You don't have a custom MOTD yet."
+    echo "Let's create one!"
+    echo ""
+fi
+
+# Create or edit MOTD
+${EDITOR:-nano} ~/.motd
+
+if [ -f ~/.motd ]; then
+    echo ""
+    echo "✓ Your custom MOTD has been updated:"
+    echo "---"
+    cat ~/.motd
+    echo "---"
+    echo ""
+    echo "It will be displayed on your next login."
+else
+    echo "MOTD creation cancelled"
+fi
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/setup-user-motd.sh
+    echo -e "${GREEN}✓ Created user MOTD setup script: /usr/local/bin/setup-user-motd.sh${NC}"
+}
+
+main() {
+    configure_pam
+    create_user_motd_script
+    create_example_motd
+    create_user_motd_template
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Per-User MOTD Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review PAM configuration: cat /tmp/pam-motd-snippet.txt"
+    echo "2. Add PAM rules to /etc/pam.d/login and /etc/pam.d/sshd"
+    echo "3. Users can setup MOTD: setup-user-motd.sh"
+    echo "4. Example files: /tmp/motd-example.txt, /tmp/user-motd-example.txt"
+    echo ""
+    echo "User MOTD location: ~/.motd"
+    echo "System MOTD location: /etc/motd or /etc/motd.d/"
+    echo ""
+}
+
+main "$@"

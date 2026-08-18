@@ -1,0 +1,658 @@
+#!/bin/bash
+#
+# PAM Bundle: 12-mfa-cert-otp
+# Title: Multi-Factor Authentication with Certificate + OTP
+# Description: Three-factor authentication for maximum security
+# Version: 1.0.0
+#
+# This bundle implements maximum security authentication requiring:
+# 1. System password (something you know)
+# 2. Smart card with X.509 certificate (something you have)
+# 3. One-Time Password from authenticator app (something you have)
+#
+# WARNING: This is complex and requires:
+# - Smart card reader hardware
+# - PKI certificate infrastructure
+# - PKCS#11 middleware configuration
+#
+# Use cases:
+# - Military/government systems
+# - Financial institutions
+# - Critical infrastructure
+# - High-security data centers
+#
+# INSTALLATION:
+# 1. Run: bash 12-mfa-cert-otp.msh
+# 2. Configure smart card middleware
+# 3. Setup PKI infrastructure
+# 4. Enroll users with certificates and OTP
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Certificate + OTP MFA Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+if [ "$EUID" -ne 0 ]; then 
+    echo -e "${RED}Error: This script must be run as root${NC}"
+    exit 1
+fi
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+install_packages() {
+    echo -e "${BLUE}Installing certificate and OTP support packages...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            apt update
+            apt install -y libpam-pkcs11 libpcsclite1 libopensc6 oathtool libpam-oath
+            ;;
+        fedora|rhel|centos)
+            dnf install -y pam_pkcs11 pcsc-lite opensc oathtool pam-oath
+            ;;
+        alpine)
+            apk add opensc oath-toolkit pcsc-lite
+            ;;
+        arch|manjaro)
+            pacman -S --noconfirm opensc oath-toolkit pcsc-lite
+            ;;
+    esac
+    echo -e "${GREEN}✓ Packages installed${NC}"
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for certificate + OTP authentication...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.cert-otp
+        fi
+    done
+    
+    cat > /tmp/pam-cert-otp-snippet.txt << 'EOF'
+# Certificate + OTP Multi-Factor Authentication
+# Add to /etc/pam.d/login and /etc/pam.d/sshd
+
+# Standard password authentication
+auth required pam_unix.so
+
+# Smart card certificate authentication
+auth required pam_pkcs11.so
+
+# One-Time Password authentication
+auth required pam_oath.so usersfile=/etc/users.oath window=10
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_certificate_infrastructure() {
+    echo -e "${BLUE}Setting up certificate infrastructure...${NC}"
+    
+    # Create PKI directories
+    mkdir -p /etc/pam_pkcs11/{public_keys,ca_dir}
+    chmod 755 /etc/pam_pkcs11
+    
+    # Create users.oath for OTP component
+    if [ ! -f /etc/users.oath ]; then
+        touch /etc/users.oath
+        chmod 600 /etc/users.oath
+        echo -e "${GREEN}✓ Created /etc/users.oath for OTP secrets${NC}"
+    fi
+    
+    # Create basic pam_pkcs11.conf if it doesn't exist
+    if [ ! -f /etc/pam_pkcs11.conf ]; then
+        cat > /etc/pam_pkcs11.conf << 'PKCS11CONF'
+#
+# /etc/pam_pkcs11.conf
+# PAM PKCS#11 Configuration
+#
+# This file configures smart card authentication through pam_pkcs11
+#
+
+# Use pkcs11 module from opensc
+use_pkcs11_module = opensc
+
+# Certificate verification
+verify_certificate = yes
+
+# Check certificate validity period
+check_cert_validity = yes
+
+# Allow self-signed certificates
+allow_selfsigned = no
+
+# CA directory for verification
+ca_dir = /etc/pam_pkcs11/ca_dir
+
+# Public keys directory
+public_key_dir = /etc/pam_pkcs11/public_keys
+
+# Debug level (0=off, 1=errors, 2=warnings, 3=debug)
+debug = 0
+
+PKCS11CONF
+        
+        chmod 644 /etc/pam_pkcs11.conf
+        echo -e "${GREEN}✓ Created /etc/pam_pkcs11.conf${NC}"
+    fi
+}
+
+create_cert_otp_tools() {
+    echo -e "${BLUE}Creating certificate + OTP management tools...${NC}"
+    
+    cat > /usr/local/sbin/cert-otp-enroll.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Enroll user in Certificate + OTP authentication
+# Requires:
+# 1. User certificate already on smart card
+# 2. Admin to run: cert-otp-enroll.sh username
+# 3. User to provide OTP secret
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Verify user exists
+if ! id "$USERNAME" &>/dev/null; then
+    echo "Error: User '$USERNAME' does not exist"
+    exit 1
+fi
+
+echo ""
+echo "=================================================="
+echo "Certificate + OTP Enrollment for User: $USERNAME"
+echo "=================================================="
+echo ""
+
+echo "STEP 1: Smart Card Certificate Verification"
+echo "==========================================="
+echo ""
+echo "Verify user's smart card certificate:"
+echo "  1. Insert smart card into reader"
+echo "  2. Administrator verifies certificate details"
+echo "  3. Extract public key from certificate"
+echo ""
+echo "Extract certificate:"
+echo "  pkcs11-tool -r --slot 0 --type cert --id 01 --outfile cert.pem"
+echo ""
+echo "View certificate:"
+echo "  openssl x509 -in cert.pem -text -noout"
+echo ""
+read -p "Has certificate been extracted and verified? (yes/no) " -r
+if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+    echo "Cancelled"
+    exit 1
+fi
+
+echo ""
+echo "STEP 2: Generate OTP Secret for User"
+echo "===================================="
+echo ""
+
+# Generate OTP secret
+SECRET=$(head -c 20 /dev/urandom | base32 | head -c 32)
+echo "Generated OTP Secret:"
+echo "  $SECRET"
+echo ""
+
+# Add to users.oath
+echo "HOTP $USERNAME - $SECRET" >> /etc/users.oath
+
+echo "STEP 3: Enroll User"
+echo "==================="
+echo ""
+echo "User must now:"
+echo "1. Install authenticator app (Google Authenticator, Microsoft Authenticator, etc.)"
+echo "2. Add account with type: HOTP"
+echo "3. Enter username: $USERNAME"
+echo "4. Enter secret: $SECRET"
+echo "5. Verify OTP code"
+echo ""
+
+echo "User enrollment summary for $USERNAME:"
+echo "  ✓ Smart card certificate: Ready"
+echo "  ✓ OTP secret: Generated"
+echo "  → Next: User scans QR code with phone"
+echo ""
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/cert-otp-enroll.sh
+    
+    cat > /usr/local/bin/test-smartcard.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Test smart card detection and certificate
+#
+
+echo "Smart Card Detection Test"
+echo "========================="
+echo ""
+
+# Check for pcsc daemon
+if systemctl is-active pcscd > /dev/null 2>&1; then
+    echo "✓ PCSC daemon is running"
+else
+    echo "✗ PCSC daemon is NOT running"
+    echo "  Start with: sudo systemctl start pcscd"
+fi
+
+echo ""
+echo "Smart card reader detection:"
+
+# List readers
+if command -v pcsc_scan &>/dev/null; then
+    echo "  Running pcsc_scan..."
+    pcsc_scan -n | head -10
+else
+    echo "  ✗ pcsc_scan not found (install pcsc-lite)"
+fi
+
+echo ""
+echo "PKCS#11 module detection:"
+
+# Check for opensc PKCS#11 module
+if [ -f /usr/lib/opensc-pkcs11.so ] || [ -f /usr/lib64/opensc-pkcs11.so ]; then
+    echo "  ✓ OpenSC PKCS#11 module found"
+else
+    echo "  ✗ OpenSC PKCS#11 module not found"
+fi
+
+echo ""
+echo "PAM certificate authentication:"
+
+if grep -q "pam_pkcs11.so" /etc/pam.d/login 2>/dev/null; then
+    echo "  ✓ pam_pkcs11 configured in PAM"
+else
+    echo "  ✗ pam_pkcs11 not configured in PAM"
+fi
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/test-smartcard.sh
+    echo -e "${GREEN}✓ Created certificate + OTP tools${NC}"
+}
+
+create_cert_otp_documentation() {
+    echo -e "${BLUE}Creating documentation...${NC}"
+    
+    cat > /usr/local/share/doc/mfa-cert-otp-README.txt << 'DOC'
+MULTI-FACTOR AUTHENTICATION - CERTIFICATE + OTP - DOCUMENTATION
+================================================================
+
+PURPOSE:
+Implement maximum security authentication with three independent factors:
+1. Something you know: System password
+2. Something you have: Smart card with X.509 certificate
+3. Something you have: Mobile device with OTP/TOTP
+
+This is the highest level of security available, suitable for:
+- Military/government systems
+- Financial institutions
+- Critical infrastructure
+- Defense contractors
+- Highly sensitive environments
+
+AUTHENTICATION FACTORS EXPLAINED:
+
+1. System Password
+   - Traditional username + password
+   - Protects against physical attack if card stolen
+   - Should be strong, not written down
+
+2. Smart Card Certificate
+   - X.509 digital certificate on smart card
+   - Requires physical card present
+   - Card contains private key (never leaves card)
+   - Provides user identity verification
+   - No password visible to attacker
+
+3. One-Time Password
+   - 6-digit code from mobile authenticator
+   - Changes every 30 seconds
+   - Proves user has mobile device
+   - Time-synchronized with server
+   - Defeats replay attacks
+
+HARDWARE REQUIREMENTS:
+
+Smart Card Reader:
+- USB smart card reader ($20-100)
+- Supports ISO 7816-3/4
+- Common models: Gemalto, Athena, O2Micro
+
+Smart Cards:
+- X.509 certificates pre-loaded
+- Private key on card (non-extractable)
+- 1024-bit RSA minimum (2048 recommended)
+- 10-year validity typically
+
+Middleware:
+- PCSC (PC/SC) - smart card framework
+- OpenSC - open-source smart card library
+- Vendor-specific drivers if needed
+
+INSTALLATION COMPLEXITY:
+
+This is the most complex authentication system to setup:
+
+1. Smart Card Infrastructure (1-2 weeks)
+   - Deploy smart card readers
+   - Distribute cards to users
+   - Install drivers on all systems
+
+2. PKI Infrastructure (2-4 weeks)
+   - Setup Certificate Authority
+   - Create user certificates
+   - Import to smart cards
+
+3. Authentication System (1 week)
+   - Configure PCSC
+   - Configure PAM
+   - Configure applications
+
+4. User Training (ongoing)
+   - How to insert card
+   - How to enroll authenticator
+   - Troubleshooting
+
+CONFIGURATION FILES:
+
+/etc/pam_pkcs11.conf
+- Smart card authentication settings
+- Certificate verification rules
+- Key/certificate locations
+
+/etc/users.oath
+- OTP secrets for users
+- Format: HOTP username - SECRET
+
+/etc/pam.d/login
+- PAM authentication stack
+- Requires: pam_unix, pam_pkcs11, pam_oath
+
+ENROLLMENT PROCESS:
+
+Step 1: Prepare Smart Card
+- User has smart card with certificate
+- Certificate contains user identity
+- Private key stored on card
+
+Step 2: Administrator Setup
+- Verify user identity
+- Extract public certificate
+- Add certificate to PKI system
+
+Step 3: OTP Enrollment
+- Generate OTP secret
+- User scans QR code with phone
+- Authenticator app syncs secret
+
+Step 4: Test Authentication
+- User inserts smart card
+- Enter password
+- Enter OTP code
+- Access granted
+
+LIMITATIONS:
+
+1. Local Authentication Only
+   - Cannot use for remote SSH (no card)
+   - Not suitable for network access
+   - Use for local terminal/console only
+
+2. Complex Setup
+   - Requires PKI infrastructure
+   - Ongoing certificate management
+   - Hardware maintenance
+
+3. Usability Impact
+   - Users must carry card
+   - Must remember password
+   - Requires phone with authenticator
+   - Slower login process
+
+4. Support Requirements
+   - Trained IT staff
+   - Hardware replacement procedures
+   - Certificate renewal procedures
+   - Card PIN management
+
+SECURITY CONSIDERATIONS:
+
+Strengths:
+- Three independent authentication factors
+- Very difficult to compromise
+- Protects against most attack types
+- Suitable for highest security needs
+
+Weaknesses:
+- Single point of failure: smart card
+- Backup card management complexity
+- Recovery procedures complicated
+- User convenience sacrificed
+
+Threat Models Protected Against:
+✓ Password guessing
+✓ Credential theft
+✓ Replay attacks
+✓ Man-in-the-middle (limited)
+✓ Malware (password/OTP capture)
+✗ Malware (smart card extraction)
+✗ Physical card theft
+✗ Card reader tampering
+
+RECOVERY PROCEDURES:
+
+1. Lost/Damaged Smart Card
+   - Card must be replaced
+   - Require OTP for authentication
+   - Issue new card with certificate
+   - User re-enrolls authenticator
+
+2. Lost Mobile Device
+   - Use OTP backup codes
+   - Require password + smart card
+   - User gets new device
+   - Re-enroll with new secret
+
+3. Forgotten Password
+   - Require smart card + OTP
+   - Reset password through recovery process
+   - Never trust password reset alone
+
+4. Locked Account
+   - Administrator intervention required
+   - Verify identity with card + OTP
+   - Reset and re-enroll
+
+COMPLIANCE:
+
+NIST SP 800-63:
+- Meets highest authentication requirements
+- Recommended for federal systems
+- Exceeds FISMA requirements
+
+FIPS 140-2:
+- Cryptographic module requirements
+- Use approved algorithms
+- Proper key management
+
+PCI-DSS 3.4:
+- Access control requirements
+- Multi-factor authentication
+- Strong credential generation
+
+HIPAA:
+- Workforce authentication
+- Multi-factor required for sensitive access
+
+TROUBLESHOOTING:
+
+1. Smart Card Not Detected
+   - Check: sudo systemctl status pcscd
+   - Verify card reader is plugged in
+   - Check: lsusb for card reader
+   - Try: sudo systemctl restart pcscd
+
+2. Certificate Validation Failed
+   - Check: Certificate hasn't expired
+   - Verify: CA certificate in trust store
+   - Check: Card PIN
+   - Test: openssl x509 -in cert.pem -text
+
+3. OTP Code Rejected
+   - Check: System time is accurate
+   - Verify: User has correct secret
+   - Test: oathtool --totp SECRET
+   - Check: window=10 is set in pam_oath
+
+4. Login Very Slow
+   - Certificate verification may be slow
+   - Check: CRL is cached locally
+   - Consider: Increase CRL cache timeout
+
+TESTING:
+
+1. Test smart card:
+   sudo test-smartcard.sh
+
+2. Test certificate auth:
+   sudo pam_pkcs11 -p opensc -u username
+
+3. Test OTP:
+   oathtool --totp USERSSECRET
+
+4. Test full login:
+   - Insert card
+   - Login with password + OTP
+
+COST ANALYSIS:
+
+One-time costs:
+- Smart card readers: $100-500
+- Cards per user: $50-200 (with certificates)
+- PKI infrastructure: $5000-20000
+
+Ongoing costs:
+- Certificate renewal: $50-100/user/year
+- Card replacement: $100-200/user
+- Support/maintenance: 0.5 FTE
+
+Total 5-year cost: $10,000-50,000 depending on scale
+
+DEPLOYMENT BEST PRACTICES:
+
+1. Pilot Program
+   - Start with 10-20 users
+   - In sensitive department
+   - Document procedures
+   - Gather feedback
+
+2. Phased Rollout
+   - Roll out by department
+   - 50-100 users per phase
+   - 2-4 week intervals
+   - Allow time for support
+
+3. Training
+   - Provide user guides
+   - Video tutorials
+   - One-on-one sessions
+   - Support hotline
+
+4. Monitoring
+   - Track failed attempts
+   - Monitor for issues
+   - Gather success metrics
+   - Document ROI
+
+ALTERNATIVES:
+
+For lower security:
+- OTP only (2FA)
+- Certificate only (2FA)
+- Smart card PIN only (2FA)
+
+For higher security:
+- Add biometric (fingerprint)
+- Add hardware token (YubiKey)
+- Add security questions
+- Add IP whitelist
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/mfa-cert-otp-README.txt
+    echo -e "${GREEN}✓ Created comprehensive documentation${NC}"
+}
+
+main() {
+    detect_distro
+    install_packages
+    configure_pam
+    setup_certificate_infrastructure
+    create_cert_otp_tools
+    create_cert_otp_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Certificate + OTP MFA Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo -e "${YELLOW}WARNING - This is a complex setup requiring:${NC}"
+    echo "  • Smart card reader hardware"
+    echo "  • X.509 user certificates"
+    echo "  • PKI infrastructure"
+    echo "  • PCSC middleware configuration"
+    echo ""
+    echo "Configuration files:"
+    echo "  - PAM config: /etc/pam_pkcs11.conf"
+    echo "  - OTP secrets: /etc/users.oath"
+    echo ""
+    echo "Management commands:"
+    echo "  - Test smart card: test-smartcard.sh"
+    echo "  - Enroll user: sudo cert-otp-enroll.sh <user>"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review template: cat /tmp/pam-cert-otp-snippet.txt"
+    echo "2. Setup PKI infrastructure and certificates"
+    echo "3. Configure /etc/pam_pkcs11.conf"
+    echo "4. Add PAM rules to /etc/pam.d/login"
+    echo "5. Test with: test-smartcard.sh"
+    echo "6. Enroll users with certificates and OTP"
+    echo ""
+    echo "See full documentation:"
+    echo "  /usr/local/share/doc/mfa-cert-otp-README.txt"
+    echo ""
+    echo "For guidance, contact your PKI administrator"
+    echo ""
+}
+
+main "$@"

@@ -1,0 +1,234 @@
+#!/bin/bash
+#
+# PAM Bundle: 02-yubikey-central
+# Title: MFA with YubiKey - Central User Mapping
+# Description: YubiKey authentication with centralized administrator-controlled key mappings
+# Version: 1.0.0
+#
+# This bundle implements YubiKey MFA with central management. Administrators maintain
+# all YubiKey registrations in /etc/u2f_mappings, simplifying key rotation and recovery.
+#
+# INSTALLATION:
+# 1. Run: bash 02-yubikey-central.msh
+# 2. Administrator registers users: yubikey-central-register-user.sh username
+# 3. Test login with SSH
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up YubiKey Central Mapping Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+install_packages() {
+    echo -e "${BLUE}Installing YubiKey packages with central mapping support...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            apt update
+            apt install -y libpam-u2f pamu2fcfg
+            ;;
+        fedora|rhel|centos)
+            dnf install -y pam-u2f pamu2fcfg
+            ;;
+        alpine)
+            apk add pam-u2f
+            ;;
+        arch|manjaro)
+            pacman -S --noconfirm pam-u2f
+            ;;
+    esac
+    echo -e "${GREEN}✓ Packages installed${NC}"
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for YubiKey central mapping...${NC}"
+    
+    for service in login sshd sudo; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.yubikey-central
+        fi
+    done
+    
+    cat > /tmp/pam-yubikey-central-snippet.txt << 'EOF'
+# YubiKey Central Mapping PAM Configuration
+# Add these lines to /etc/pam.d/login, /etc/pam.d/sshd, /etc/pam.d/sudo
+
+auth required pam_unix.so
+auth required pam_u2f.so authfile=/etc/u2f_mappings
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_central_mapping() {
+    echo -e "${BLUE}Setting up central YubiKey mapping system...${NC}"
+    
+    # Create empty mapping file with proper permissions
+    if [ ! -f /etc/u2f_mappings ]; then
+        touch /etc/u2f_mappings
+        chmod 600 /etc/u2f_mappings
+        echo -e "${GREEN}✓ Created /etc/u2f_mappings${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/u2f_mappings already exists${NC}"
+    fi
+    
+    # Create administrator registration script
+    cat > /usr/local/sbin/yubikey-central-register-user.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Register a user's YubiKey in the central mapping file
+# Usage: yubikey-central-register-user.sh <username>
+#
+# Only root can run this script
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <username>"
+    echo ""
+    echo "Example: $0 alice"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Verify user exists
+if ! id "$USERNAME" &>/dev/null; then
+    echo "Error: User '$USERNAME' does not exist"
+    exit 1
+fi
+
+echo "=================================================="
+echo "YubiKey Central Registration - User: $USERNAME"
+echo "=================================================="
+echo ""
+echo "This will register a YubiKey for user: $USERNAME"
+echo "Please have the user insert their YubiKey and be ready to touch it."
+echo ""
+
+# Temporary file for registration
+TEMP_REG=$(mktemp)
+trap "rm -f $TEMP_REG" EXIT
+
+# Run pamu2fcfg and capture output
+echo "Waiting for YubiKey touch..."
+pamu2fcfg -u "$USERNAME" > "$TEMP_REG" 2>/dev/null
+
+if [ $? -ne 0 ] || [ ! -s "$TEMP_REG" ]; then
+    echo "Error: Failed to register YubiKey. Did you touch it?"
+    exit 1
+fi
+
+# Remove existing registration for this user
+sed -i "^$USERNAME:/d" /etc/u2f_mappings
+
+# Append new registration
+cat "$TEMP_REG" >> /etc/u2f_mappings
+
+echo ""
+echo "✓ YubiKey registered successfully for user: $USERNAME"
+echo ""
+echo "Registration details:"
+grep "^$USERNAME:" /etc/u2f_mappings
+echo ""
+echo "User can now login with YubiKey + password"
+echo ""
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/yubikey-central-register-user.sh
+    echo -e "${GREEN}✓ Created registration script: /usr/local/sbin/yubikey-central-register-user.sh${NC}"
+}
+
+create_admin_tools() {
+    echo -e "${BLUE}Creating administrator management tools...${NC}"
+    
+    cat > /usr/local/sbin/yubikey-list-registered.sh << 'SCRIPT'
+#!/bin/bash
+#
+# List all registered YubiKeys
+#
+
+if [ ! -f /etc/u2f_mappings ]; then
+    echo "No YubiKey mappings found"
+    exit 0
+fi
+
+echo "Registered YubiKeys:"
+echo "===================="
+cut -d':' -f1 /etc/u2f_mappings | sort -u
+
+echo ""
+echo "Total registered users: $(cut -d':' -f1 /etc/u2f_mappings | sort -u | wc -l)"
+
+SCRIPT
+    
+    chmod 755 /usr/local/sbin/yubikey-list-registered.sh
+    
+    cat > /usr/local/sbin/yubikey-backup-mappings.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Backup YubiKey central mappings with timestamp
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_FILE="/root/u2f_mappings_backup_$TIMESTAMP.conf"
+
+cp /etc/u2f_mappings "$BACKUP_FILE"
+chmod 600 "$BACKUP_FILE"
+
+echo "✓ Backup created: $BACKUP_FILE"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/yubikey-backup-mappings.sh
+    echo -e "${GREEN}✓ Created management tools${NC}"
+}
+
+main() {
+    detect_distro
+    install_packages
+    configure_pam
+    setup_central_mapping
+    create_admin_tools
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "YubiKey Central Mapping Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Administrator commands:"
+    echo "  - Register user: /usr/local/sbin/yubikey-central-register-user.sh <username>"
+    echo "  - List registered: /usr/local/sbin/yubikey-list-registered.sh"
+    echo "  - Backup mappings: /usr/local/sbin/yubikey-backup-mappings.sh"
+    echo ""
+    echo "Example registration:"
+    echo "  sudo yubikey-central-register-user.sh alice"
+    echo ""
+}
+
+main "$@"

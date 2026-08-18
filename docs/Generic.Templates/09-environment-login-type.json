@@ -1,0 +1,44 @@
+{
+  "bundle_name": "09-environment-login-type",
+  "version": "1.0.0",
+  "title": "Environment Variables by Login Type",
+  "description": "Set different environment variables based on login type (local console vs SSH remote login)",
+  "author": "PAM Manager v9.0",
+  "category": "session",
+  "security_level": "low",
+  "pam_services": ["login", "sshd"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": ["libpam-modules"], "package_manager": "apt"},
+    "fedora_rhel": {"packages": ["pam"], "package_manager": "dnf"},
+    "alpine": {"packages": ["pam"], "package_manager": "apk"},
+    "arch": {"packages": ["pam"], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "session_stack": [
+      "session optional pam_env.so conffile=/etc/security/pam_env.local.conf",
+      "session optional pam_env.so conffile=/etc/security/pam_env.remote.conf"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["pam_env module"],
+    "pam_modules": ["pam_env"],
+    "configuration_files": [
+      "/etc/security/pam_env.local.conf",
+      "/etc/security/pam_env.remote.conf"
+    ]
+  },
+  "notes": {
+    "use_cases": [
+      "Set different prompts for local vs remote login",
+      "Enable/disable X11 forwarding indicators",
+      "Set resource limits based on login origin",
+      "Track login origin for auditing"
+    ],
+    "variable_example": "LOGIN_ORIGIN=local or LOGIN_ORIGIN=remote",
+    "access_via_PAM": "Available in user shell environment and scripts"
+  },
+  "script_file": "09-environment-login-type.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

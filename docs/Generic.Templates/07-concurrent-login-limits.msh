@@ -1,0 +1,392 @@
+#!/bin/bash
+#
+# PAM Bundle: 07-concurrent-login-limits
+# Title: Concurrent Login Session Limits
+# Description: Limit user concurrent sessions and process resources
+# Version: 1.0.0
+#
+# This bundle prevents:
+# - Users from opening unlimited login sessions
+# - Fork bombs and resource exhaustion attacks
+# - Single users consuming all system resources
+#
+# Default limits:
+# - Regular users: max 2 concurrent logins, 2000 processes
+# - Administrators: higher limits
+#
+# INSTALLATION:
+# 1. Run: bash 07-concurrent-login-limits.msh
+# 2. Configure /etc/security/limits.conf with your policies
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Concurrent Login Limits Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for login limits...${NC}"
+    
+    for service in login sshd sudo; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.limits
+        fi
+    done
+    
+    cat > /tmp/pam-limits-snippet.txt << 'EOF'
+# Login Session and Resource Limits Configuration
+# Add to /etc/pam.d/login, /etc/pam.d/sshd, /etc/pam.d/sudo
+
+session required pam_limits.so
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_limits_config() {
+    echo -e "${BLUE}Setting up resource limits configuration...${NC}"
+    
+    if [ ! -f /etc/security/limits.conf ]; then
+        cat > /etc/security/limits.conf << 'LIMCONF'
+#
+# /etc/security/limits.conf
+#
+# This file specifies resource limits for user sessions
+# Used by pam_limits module
+#
+# Format:
+# domain  type  item  value
+#
+# domain: username, @groupname, or *
+# type:   soft (warning) or hard (enforce)
+# item:   maxlogins, mproc, memlock, nofile, nproc, as, cpu, fsize, locks, msgqueue, nice, rss, rtprio, sigpending
+#
+# Examples:
+#
+
+# Limit concurrent login sessions
+# Regular user: max 2 concurrent logins
+*              hard    maxlogins        2
+
+# Limit maximum processes per user
+# Prevent fork bombs
+*              hard    mproc            2000
+*              soft    mproc            1024
+
+# Limit open files
+# Prevent resource exhaustion
+*              soft    nofile           1024
+*              hard    nofile           65535
+
+# Administrator limits (higher)
+# @admin         hard    maxlogins        10
+# @admin         hard    mproc            10000
+
+# Example configurations:
+#
+# Developers - normal limits
+# @developers    hard    maxlogins        3
+# @developers    hard    mproc            5000
+#
+# Contractors - restricted
+# @contractors   hard    maxlogins        1
+# @contractors   hard    mproc            500
+#
+# Service users - high limits
+# apache         hard    mproc            5000
+# mysql          hard    mproc            10000
+
+LIMCONF
+        
+        chmod 644 /etc/security/limits.conf
+        echo -e "${GREEN}✓ Created /etc/security/limits.conf${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/security/limits.conf already exists${NC}"
+    fi
+}
+
+create_limits_tools() {
+    echo -e "${BLUE}Creating limits management tools...${NC}"
+    
+    cat > /usr/local/bin/show-current-limits.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Show current resource limits for user
+#
+
+USER=${1:-$(whoami)}
+
+echo "Resource Limits for User: $USER"
+echo "================================"
+echo ""
+
+# Show limits using ulimit
+echo "Current session limits:"
+echo "---"
+echo "Max open files:     $(ulimit -n)"
+echo "Max processes:      $(ulimit -u)"
+echo "Max memory locked:   $(ulimit -l)"
+echo "Max file size:      $(ulimit -f)"
+echo "Max CPU time:       $(ulimit -t)"
+echo "Max core dump:      $(ulimit -c)"
+echo "---"
+echo ""
+
+# Show policy limits from limits.conf
+if [ -f /etc/security/limits.conf ]; then
+    echo "Configured limits for this user:"
+    echo "---"
+    grep -v "^#" /etc/security/limits.conf | grep -v "^$" | \
+        awk -v user="$USER" '$1 == user || $1 == "@"substr($0,index($0,"@")) || $1 == "*" {print}'
+    echo "---"
+fi
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/show-current-limits.sh
+    
+    cat > /usr/local/sbin/check-active-logins.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Check current active login sessions per user
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "Active Login Sessions by User"
+echo "============================="
+echo ""
+
+# Use who command to count sessions per user
+who | awk '{print $1}' | sort | uniq -c | \
+    awk '{printf "  %-20s %d session(s)\n", $2, $1}'
+
+echo ""
+echo "Compare with limits in /etc/security/limits.conf"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/check-active-logins.sh
+    
+    cat > /usr/local/sbin/check-resource-usage.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Check current resource usage by user/process
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "System Resource Usage"
+echo "====================="
+echo ""
+
+echo "Top processes by memory usage:"
+ps aux --sort=-%mem | head -10 | awk '{printf "  %-15s %5s%%  %s\n", $1, $4, $11}'
+
+echo ""
+echo "Top processes by CPU usage:"
+ps aux --sort=-%cpu | head -10 | awk '{printf "  %-15s %5s%%  %s\n", $1, $3, $11}'
+
+echo ""
+echo "Process count by user:"
+ps aux | awk '{print $1}' | sort | uniq -c | sort -rn | \
+    awk '{printf "  %-20s %d processes\n", $2, $1}' | head -10
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/check-resource-usage.sh
+    echo -e "${GREEN}✓ Created limits management tools${NC}"
+}
+
+create_limits_documentation() {
+    echo -e "${BLUE}Creating limits documentation...${NC}"
+    
+    cat > /usr/local/share/doc/limits-README.txt << 'DOC'
+CONCURRENT LOGIN LIMITS - DOCUMENTATION
+========================================
+
+PURPOSE:
+Control how many concurrent sessions users can have and how many system
+resources they can consume. Protects against:
+- Accidental resource exhaustion
+- Fork bombs and DoS attacks
+- Single user consuming all system resources
+
+CONFIGURATION FILE:
+/etc/security/limits.conf
+
+FORMAT:
+domain  type  item  value
+
+DOMAIN:
+- username    : Specific user (e.g., "alice")
+- @groupname  : All users in group (e.g., "@contractors")
+- *           : All users
+- root        : Special case (often excluded)
+
+TYPE:
+- soft  : Warning limit (user can exceed with error)
+- hard  : Hard limit (cannot be exceeded)
+
+COMMON ITEMS:
+
+1. maxlogins
+   - Maximum concurrent login sessions
+   - Prevents user from having multiple logins
+   - Example: hard limit of 2 per user
+
+2. mproc / nproc
+   - Maximum number of processes
+   - Prevents fork bombs
+   - Typical: 1000-5000 soft, 2000-10000 hard
+
+3. nofile
+   - Maximum number of open file descriptors
+   - Default often too low (1024)
+   - Increase for servers: 65535
+
+4. memlock
+   - Maximum locked memory (RAM)
+   - Usually unlimited (-)
+
+5. as
+   - Address space (virtual memory)
+   - Limits total memory usage
+
+EXAMPLE POLICIES:
+
+1. Default User
+   *              hard    maxlogins        2
+   *              hard    mproc            1000
+
+2. Administrator
+   @admin         hard    maxlogins        10
+   @admin         hard    mproc            10000
+   @admin         hard    nofile           65535
+
+3. Web Server
+   www-data       soft    nofile           4096
+   www-data       hard    nofile           8192
+   www-data       hard    mproc            5000
+
+4. Database Server
+   mysql          soft    nofile           8192
+   mysql          hard    nofile           65535
+   mysql          hard    mproc            10000
+
+5. Development User
+   @developers    hard    maxlogins        5
+   @developers    hard    mproc            5000
+   @developers    hard    nofile           65535
+
+TESTING:
+
+1. Check current session count:
+   who | grep username | wc -l
+
+2. Check process limit:
+   ulimit -u
+
+3. Check open file limit:
+   ulimit -n
+
+4. Verify limits are applied:
+   cat /proc/$$/limits
+
+TROUBLESHOOTING:
+
+1. User gets "Too many open files":
+   - Increase nofile limit in limits.conf
+   - Restart user session for changes to apply
+
+2. User gets "Resource temporarily unavailable":
+   - Process limit reached
+   - Check mproc / nproc limits
+   - Kill unnecessary processes
+
+3. User can open more logins than maxlogins:
+   - May require pam_limits.so in login PAM config
+   - Check /etc/pam.d/login has pam_limits.so
+   - Verify session stack, not auth stack
+
+4. Changes not taking effect:
+   - Limits apply to new sessions only
+   - User must log out and login again
+   - Not applied to already-running shells
+
+MONITORING:
+
+Regular checks:
+1. Monitor resource usage: check-resource-usage.sh
+2. Check active sessions: check-active-logins.sh
+3. Review policies monthly
+4. Adjust based on actual usage patterns
+
+AUDIT:
+
+Track login attempts:
+- /var/log/auth.log (Debian/Ubuntu)
+- /var/log/secure (Fedora/RHEL)
+- Search for "limit" or "maxlogins"
+
+PERFORMANCE IMPACT:
+
+- Minimal overhead (checked during login)
+- No impact after login completes
+- Process tracking is lightweight
+- Monitor for "too many open files" errors
+
+BEST PRACTICES:
+
+1. Start with conservative limits
+2. Monitor actual usage
+3. Increase limits as needed
+4. Document why each limit exists
+5. Review quarterly
+6. Different limits for different roles
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/limits-README.txt
+    echo -e "${GREEN}✓ Created limits documentation${NC}"
+}
+
+main() {
+    configure_pam
+    setup_limits_config
+    create_limits_tools
+    create_limits_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Concurrent Login Limits Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Configuration file: /etc/security/limits.conf"
+    echo ""
+    echo "Management commands:"
+    echo "  - Check user limits: show-current-limits.sh <username>"
+    echo "  - Check active logins: sudo check-active-logins.sh"
+    echo "  - Check resource usage: sudo check-resource-usage.sh"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review template: cat /tmp/pam-limits-snippet.txt"
+    echo "2. Add PAM config to /etc/pam.d/login, sshd, sudo"
+    echo "3. Edit /etc/security/limits.conf with your policies"
+    echo "4. Have users logout and login to apply limits"
+    echo ""
+}
+
+main "$@"

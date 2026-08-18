@@ -1,0 +1,544 @@
+#!/bin/bash
+#
+# PAM Bundle: 11-mfa-otp-hotp
+# Title: Multi-Factor Authentication with OTP/HOTP
+# Description: Two-factor authentication using mobile authenticator apps
+# Version: 1.0.0
+#
+# This bundle implements OTP/HOTP authentication requiring:
+# 1. System password (pam_unix)
+# 2. One-Time Password from authenticator app
+#
+# Supported authenticator apps:
+# - Google Authenticator (Android/iOS)
+# - Microsoft Authenticator (Android/iOS)
+# - Aegis Authenticator (Android)
+# - FreeOTP (Android/iOS)
+#
+# INSTALLATION:
+# 1. Run: bash 11-mfa-otp-hotp.msh
+# 2. Setup users: otp-user-enroll.sh username
+# 3. User scans QR code into authenticator app
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up OTP/HOTP MFA Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+if [ "$EUID" -ne 0 ]; then 
+    echo -e "${RED}Error: This script must be run as root${NC}"
+    exit 1
+fi
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+install_packages() {
+    echo -e "${BLUE}Installing OTP support packages...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            apt update
+            apt install -y libpam-oath oathtool
+            ;;
+        fedora|rhel|centos)
+            dnf install -y pam-oath oathtool
+            ;;
+        alpine)
+            apk add oath-toolkit
+            ;;
+        arch|manjaro)
+            pacman -S --noconfirm oath-toolkit
+            ;;
+    esac
+    echo -e "${GREEN}✓ OTP packages installed${NC}"
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for OTP/HOTP authentication...${NC}"
+    
+    for service in login sshd; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.oath
+        fi
+    done
+    
+    cat > /tmp/pam-oath-snippet.txt << 'EOF'
+# OTP/HOTP Two-Factor Authentication Configuration
+# Add to /etc/pam.d/login and /etc/pam.d/sshd
+
+auth required pam_unix.so
+auth required pam_oath.so usersfile=/etc/users.oath window=10
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_oath_config() {
+    echo -e "${BLUE}Setting up OATH configuration...${NC}"
+    
+    # Create users.oath with restricted permissions
+    if [ ! -f /etc/users.oath ]; then
+        touch /etc/users.oath
+        chmod 600 /etc/users.oath
+        echo -e "${GREEN}✓ Created /etc/users.oath${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/users.oath already exists${NC}"
+    fi
+}
+
+create_oath_tools() {
+    echo -e "${BLUE}Creating OTP enrollment and management tools...${NC}"
+    
+    cat > /usr/local/sbin/otp-user-enroll.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Enroll user in OTP/HOTP authentication
+# Usage: otp-user-enroll.sh <username>
+#
+# This script generates a secret for the user and displays a QR code
+# The user scans the QR code with their authenticator app
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Verify user exists
+if ! id "$USERNAME" &>/dev/null; then
+    echo "Error: User '$USERNAME' does not exist"
+    exit 1
+fi
+
+echo ""
+echo "=================================================="
+echo "OTP/HOTP Enrollment for User: $USERNAME"
+echo "=================================================="
+echo ""
+
+# Check if user already enrolled
+if grep -q "^$USERNAME:" /etc/users.oath; then
+    echo "Warning: User '$USERNAME' already has OTP configured"
+    read -p "Overwrite existing configuration? (yes/no) " -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+        echo "Cancelled"
+        exit 0
+    fi
+    
+    # Remove old entry
+    sed -i "^$USERNAME:/d" /etc/users.oath
+fi
+
+# Generate random base32 secret (160-bit = 32 chars in base32)
+SECRET=$(head -c 20 /dev/urandom | base32 | head -c 32)
+
+echo "Generated OTP Secret:"
+echo "  $SECRET"
+echo ""
+
+# Add to users.oath (HOTP format)
+echo "HOTP $USERNAME - $SECRET" >> /etc/users.oath
+
+echo "User can enroll using one of these methods:"
+echo ""
+echo "Method 1: Manual Entry"
+echo "  App type: Time-based OTP"
+echo "  Secret: $SECRET"
+echo "  Digits: 6"
+echo ""
+echo "Method 2: Scan QR Code (if you have qrencode installed)"
+if command -v qrencode &>/dev/null; then
+    echo "  QR Code:"
+    # Format for authenticator: otpauth://totp/user@host?secret=...
+    qrencode -t ASCII "otpauth://hotp/$USERNAME?secret=$SECRET"
+else
+    echo "  (Install qrencode to display QR code)"
+    echo "  Alternative: use online QR code generator with:"
+    echo "    otpauth://hotp/$USERNAME?secret=$SECRET"
+fi
+
+echo ""
+echo "Next steps:"
+echo "1. Open authenticator app on mobile device"
+echo "2. Choose 'Add Account' or '+'"
+echo "3. Select 'HOTP' or 'Manual Entry'"
+echo "4. Enter username: $USERNAME"
+echo "5. Enter secret: $SECRET"
+echo "6. Confirm enrollment: otp-verify-enrollment.sh $USERNAME"
+echo ""
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/otp-user-enroll.sh
+    
+    cat > /usr/local/sbin/otp-verify-enrollment.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Verify user's OTP enrollment by testing with generated code
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Get user's secret from users.oath
+SECRET=$(grep "^HOTP $USERNAME" /etc/users.oath | awk '{print $NF}')
+
+if [ -z "$SECRET" ]; then
+    echo "Error: User '$USERNAME' not found in OTP configuration"
+    exit 1
+fi
+
+echo "=================================================="
+echo "OTP Enrollment Verification for: $USERNAME"
+echo "=================================================="
+echo ""
+
+echo "Enter the 6-digit code from your authenticator app:"
+read -p "Code: " USER_CODE
+
+# Verify the code
+if oathtool --totp --time-step-size 30s "$SECRET" 2>/dev/null | grep -q "$USER_CODE"; then
+    echo ""
+    echo "✓ Code verified successfully!"
+    echo "  User '$USERNAME' is now enrolled for OTP/HOTP authentication"
+    echo ""
+    echo "User will need to provide password AND OTP code on next login"
+else
+    echo ""
+    echo "✗ Code verification failed"
+    echo "  Make sure you entered the correct 6-digit code"
+    echo "  Code may have expired; try again quickly"
+fi
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/otp-verify-enrollment.sh
+    
+    cat > /usr/local/sbin/otp-list-enrolled.sh << 'SCRIPT'
+#!/bin/bash
+#
+# List users enrolled in OTP
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ ! -f /etc/users.oath ]; then
+    echo "No OTP users configured"
+    exit 0
+fi
+
+echo "Users Enrolled in OTP/HOTP:"
+echo "============================"
+echo ""
+
+grep -v "^#" /etc/users.oath | grep -v "^$" | while read line; do
+    TYPE=$(echo "$line" | awk '{print $1}')
+    USERNAME=$(echo "$line" | awk '{print $2}')
+    echo "  ✓ $USERNAME ($TYPE)"
+done
+
+echo ""
+COUNT=$(grep -c "^[HT]OTP" /etc/users.oath 2>/dev/null || echo "0")
+echo "Total enrolled: $COUNT user(s)"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/otp-list-enrolled.sh
+    echo -e "${GREEN}✓ Created OTP management tools${NC}"
+}
+
+create_oath_documentation() {
+    echo -e "${BLUE}Creating OTP documentation...${NC}"
+    
+    cat > /usr/local/share/doc/mfa-otp-hotp-README.txt << 'DOC'
+MULTI-FACTOR AUTHENTICATION - OTP/HOTP - DOCUMENTATION
+========================================================
+
+PURPOSE:
+Implement Two-Factor Authentication (2FA) requiring:
+1. System password (something you know)
+2. One-Time Password from mobile app (something you have)
+
+This significantly increases security and prevents password-only attacks.
+
+HOW IT WORKS:
+
+1. Administrator enrolls user with: otp-user-enroll.sh username
+2. User scans QR code with authenticator app
+3. On login, user enters password + OTP code
+4. System verifies both using pam_oath module
+5. If either is wrong, login fails
+
+SUPPORTED AUTHENTICATOR APPS:
+
+All OATH-compatible apps work:
+- Google Authenticator (Android, iOS)
+- Microsoft Authenticator (Android, iOS)
+- Aegis Authenticator (Android)
+- FreeOTP (Android, iOS)
+- 1Password
+- Bitwarden
+- Other HOTP/TOTP apps
+
+INSTALLATION STEPS:
+
+1. Administrator setup:
+   sudo otp-user-enroll.sh alice
+
+2. User setup:
+   a. Open authenticator app on phone
+   b. Scan QR code or enter secret manually
+   c. App generates 6-digit codes
+
+3. Verify enrollment:
+   sudo otp-verify-enrollment.sh alice
+
+4. User logs in:
+   - Username: alice
+   - Password: secret123
+   - At prompt: Enter OTP from app (e.g., 123456)
+
+OTP CODES:
+
+- HOTP (HMAC-based OTP)
+  - Counter-based
+  - Each code increments a counter
+  - Code never repeats unless reset
+  - Used for hardware tokens (YubiKey)
+
+- TOTP (Time-based OTP)
+  - Time-based (usually 30-second window)
+  - Code changes every 30 seconds
+  - Code repeats after 1 second (in 30 seconds)
+  - Used by Google Authenticator and most apps
+
+CONFIGURATION FILE:
+
+/etc/users.oath
+Format: HOTP username - SECRET
+Example: HOTP alice - HXDP5JQVJVGVYQKQ
+
+Permissions: 600 (read-only by root)
+
+PAM WINDOW PARAMETER:
+
+window=10 in pam_oath.so means:
+- Allows 10 past and 10 future OTP codes
+- Accommodates clock drift between devices
+- Prevents "code expired" errors
+- Security trade-off for usability
+
+TROUBLESHOOTING:
+
+1. "Invalid OTP" error:
+   - Code may have expired (TOTP changes every 30s)
+   - Clock skew between phone and server
+   - User entered wrong code
+   - Test with: oathtool --totp SECRET
+
+2. User can't login:
+   - Verify user in /etc/users.oath
+   - Check syntax: otp-list-enrolled.sh
+   - Ensure app is set to HOTP/TOTP mode
+   - Test code: oathtool --totp -b SECRET
+
+3. Can't scan QR code:
+   - Install: apt install qrencode
+   - Re-run: otp-user-enroll.sh username
+   - Or enter secret manually in app
+
+4. User locked out:
+   - Administrator can reset: otp-user-enroll.sh username
+   - User must re-enroll with app
+
+BACKUP CODES:
+
+Important: Create backup codes
+- Save secret in secure location (password manager)
+- Or print backup codes and store physically
+- In case phone is lost/broken
+
+Backup storage:
+1. Password manager (1Password, Bitwarden)
+2. Encrypted USB drive
+3. Physical safe (printed)
+4. Cloud backup (encrypted)
+
+SECURITY BEST PRACTICES:
+
+1. Enrollment
+   - Verify identity before enrollment
+   - Ensure app is legitimate
+   - Test with verification code
+
+2. Administration
+   - Require 2FA for admin accounts
+   - Monitor enrollment logs
+   - Regular audit of enrolled users
+
+3. Users
+   - Never share secret code
+   - Backup authenticator database
+   - Keep phone secured
+   - Update authenticator app
+
+4. Compliance
+   - NIST: Recommends TOTP with 6+ digits
+   - HIPAA: Accepts TOTP for 2FA
+   - PCI-DSS: Requires 2FA, TOTP compliant
+
+RECOVERY SCENARIOS:
+
+1. Lost phone
+   - Use backup codes/secrets
+   - Administrator re-enrollment
+   - Account recovery process
+
+2. Authenticator malfunction
+   - Reinstall app with backup
+   - Re-scan QR code
+   - Use backup codes
+
+3. Multiple devices
+   - Scan QR with all devices
+   - All generate same codes
+   - Useful for backup
+
+PERFORMANCE IMPACT:
+
+- OTP verification: ~10-50ms per login
+- Minimal CPU overhead
+- No network required (offline OTP)
+- Negligible impact on login time
+
+SCALABILITY:
+
+- /etc/users.oath is simple text file
+- Can handle 1000s of users efficiently
+- Consider LDAP/NIS for large deployments
+- Database backend available (pam_oath supports it)
+
+TESTING:
+
+Generate test codes:
+$ oathtool --totp SECRET
+123456
+
+Verify specific code:
+$ oathtool --totp -w1 SECRET 123456
+123456 (VALID)
+
+Test login with OTP:
+$ ssh localhost
+Password: secret123
+OTP: 123456
+
+MANAGEMENT COMMANDS:
+
+1. Enroll user:
+   sudo otp-user-enroll.sh alice
+
+2. Verify enrollment:
+   sudo otp-verify-enrollment.sh alice
+
+3. List enrolled users:
+   sudo otp-list-enrolled.sh
+
+4. Remove user:
+   sudo sed -i "^alice:/d" /etc/users.oath
+
+5. View user secret:
+   sudo grep "alice" /etc/users.oath
+
+ADVANCED TOPICS:
+
+Using with SSH:
+- Add pam_oath.so to /etc/pam.d/sshd
+- Use ChallengeResponseAuthentication
+- Users authenticate with password + OTP
+
+Using with sudo:
+- Add pam_oath.so to /etc/pam.d/sudo
+- Require OTP for sensitive commands
+
+Combining with other 2FA:
+- OTP + YubiKey
+- OTP + Certificates
+- OTP + Biometric
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/mfa-otp-hotp-README.txt
+    echo -e "${GREEN}✓ Created OTP documentation${NC}"
+}
+
+main() {
+    detect_distro
+    install_packages
+    configure_pam
+    setup_oath_config
+    create_oath_tools
+    create_oath_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "OTP/HOTP MFA Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo -e "${BLUE}Configuration file:${NC} /etc/users.oath"
+    echo ""
+    echo -e "${BLUE}Enrollment and Management:${NC}"
+    echo "  - Enroll user: sudo otp-user-enroll.sh <user>"
+    echo "  - Verify enrollment: sudo otp-verify-enrollment.sh <user>"
+    echo "  - List enrolled: sudo otp-list-enrolled.sh"
+    echo ""
+    echo -e "${BLUE}Authenticator Apps to Use:${NC}"
+    echo "  - Google Authenticator (Android/iOS)"
+    echo "  - Microsoft Authenticator (Android/iOS)"
+    echo "  - Aegis Authenticator (Android)"
+    echo "  - FreeOTP (Android/iOS)"
+    echo ""
+    echo -e "${BLUE}Next steps:${NC}"
+    echo "1. Review template: cat /tmp/pam-oath-snippet.txt"
+    echo "2. Add PAM config to /etc/pam.d/login and /etc/pam.d/sshd"
+    echo "3. Enroll users: sudo otp-user-enroll.sh username"
+    echo "4. Test login: ssh user@localhost (with password + OTP)"
+    echo ""
+}
+
+main "$@"

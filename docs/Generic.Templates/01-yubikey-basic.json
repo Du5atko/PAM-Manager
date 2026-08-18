@@ -1,0 +1,54 @@
+{
+  "bundle_name": "01-yubikey-basic",
+  "version": "1.0.0",
+  "title": "MFA with YubiKey (System Key/Password + FIDO/U2F)",
+  "description": "Basic YubiKey FIDO/U2F authentication with system password verification. Each user maintains their own YubiKey registration in ~/.config/Yubico/u2f_keys",
+  "author": "PAM Manager v9.0",
+  "category": "authentication",
+  "security_level": "high",
+  "pam_services": ["login", "sshd", "sudo"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {
+      "packages": ["libpam-u2f", "pamu2fcfg"],
+      "package_manager": "apt"
+    },
+    "fedora_rhel": {
+      "packages": ["pam-u2f", "pamu2fcfg"],
+      "package_manager": "dnf"
+    },
+    "alpine": {
+      "packages": ["pam-u2f"],
+      "package_manager": "apk"
+    },
+    "arch": {
+      "packages": ["pam-u2f"],
+      "package_manager": "pacman"
+    }
+  },
+  "configuration": {
+    "auth_stack": [
+      "auth required pam_unix.so",
+      "auth required pam_u2f.so"
+    ],
+    "account_stack": [
+      "account required pam_permit.so"
+    ],
+    "session_stack": [
+      "session required pam_permit.so"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Linux kernel 4.0+", "libfido2"],
+    "pam_modules": ["pam_unix", "pam_u2f"],
+    "user_action_required": true
+  },
+  "notes": {
+    "user_setup": "Each user must run the initialization script to register their YubiKey",
+    "recovery": "Users should save backup codes during registration",
+    "testing": "Use 'pamu2fcfg' to test YubiKey detection"
+  },
+  "script_file": "01-yubikey-basic.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

@@ -1,0 +1,55 @@
+{
+  "bundle_name": "02-yubikey-central",
+  "version": "1.0.0",
+  "title": "MFA with YubiKey - Central User Mapping",
+  "description": "YubiKey FIDO/U2F authentication with centralized user-to-key mapping file. Administrators manage key registrations in /etc/u2f_mappings",
+  "author": "PAM Manager v9.0",
+  "category": "authentication",
+  "security_level": "high",
+  "pam_services": ["login", "sshd", "sudo"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {
+      "packages": ["libpam-u2f", "pamu2fcfg"],
+      "package_manager": "apt"
+    },
+    "fedora_rhel": {
+      "packages": ["pam-u2f", "pamu2fcfg"],
+      "package_manager": "dnf"
+    },
+    "alpine": {
+      "packages": ["pam-u2f"],
+      "package_manager": "apk"
+    },
+    "arch": {
+      "packages": ["pam-u2f"],
+      "package_manager": "pacman"
+    }
+  },
+  "configuration": {
+    "auth_stack": [
+      "auth required pam_unix.so",
+      "auth required pam_u2f.so authfile=/etc/u2f_mappings"
+    ],
+    "account_stack": [
+      "account required pam_permit.so"
+    ],
+    "session_stack": [
+      "session required pam_permit.so"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Linux kernel 4.0+", "libfido2", "Root/Administrator access"],
+    "pam_modules": ["pam_unix", "pam_u2f"],
+    "configuration_files": ["/etc/u2f_mappings"]
+  },
+  "notes": {
+    "admin_setup": "Administrator must create and maintain /etc/u2f_mappings file",
+    "mapping_format": "username:registration_data:registration_data",
+    "recovery": "Keep backup of /etc/u2f_mappings for disaster recovery",
+    "bulk_import": "Can import YubiKey data from multiple users using pamu2fcfg"
+  },
+  "script_file": "02-yubikey-central.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

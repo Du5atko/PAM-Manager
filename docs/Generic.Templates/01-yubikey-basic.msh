@@ -1,0 +1,184 @@
+#!/bin/bash
+#
+# PAM Bundle: 01-yubikey-basic
+# Title: MFA with YubiKey (System Key/Password + FIDO/U2F)
+# Description: Basic YubiKey FIDO/U2F authentication with per-user registration
+# Version: 1.0.0
+# Platform: Debian/Ubuntu, Fedora, Alpine, Arch
+#
+# This bundle implements basic MFA using YubiKey with FIDO/U2F standard.
+# Each user independently registers their YubiKey for their account.
+#
+# INSTALLATION:
+# 1. Run: bash 01-yubikey-basic.msh
+# 2. Each user runs: yubikey-u2f-init.sh
+# 3. Test login with: ssh user@hostname
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up YubiKey Basic MFA Bundle"
+echo "=================================================="
+
+# Color output for readability
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Detect Linux distribution
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+# Install packages based on distribution
+install_packages() {
+    echo -e "${BLUE}Installing required packages for YubiKey support...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            echo "Detected Debian/Ubuntu"
+            apt update
+            apt install -y libpam-u2f pamu2fcfg
+            ;;
+        fedora|rhel|centos)
+            echo "Detected Fedora/RHEL/CentOS"
+            dnf install -y pam-u2f pamu2fcfg
+            ;;
+        alpine)
+            echo "Detected Alpine Linux"
+            apk add pam-u2f
+            ;;
+        arch|manjaro)
+            echo "Detected Arch Linux"
+            pacman -S --noconfirm pam-u2f
+            ;;
+        *)
+            echo -e "${RED}Unsupported distribution: $OS${NC}"
+            exit 1
+            ;;
+    esac
+    echo -e "${GREEN}✓ Packages installed successfully${NC}"
+}
+
+# Create PAM configuration for authentication services
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for YubiKey authentication...${NC}"
+    
+    # Create a backup of original PAM files
+    for service in login sshd sudo; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.yubikey-basic
+            echo -e "${GREEN}✓ Backed up /etc/pam.d/$service${NC}"
+        fi
+    done
+    
+    # Note: Actual PAM configuration should be done using proper PAM configuration management
+    # This is a template showing the required lines
+    cat > /tmp/pam-yubikey-basic-snippet.txt << 'EOF'
+# YubiKey FIDO/U2F Authentication Configuration
+# Add these lines to /etc/pam.d/login, /etc/pam.d/sshd, /etc/pam.d/sudo
+# Place them BEFORE the 'pam_unix.so' lines
+
+auth required pam_unix.so
+auth required pam_u2f.so
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created at /tmp/pam-yubikey-basic-snippet.txt${NC}"
+}
+
+# Create user initialization script
+create_user_init_script() {
+    echo -e "${BLUE}Creating YubiKey initialization script for users...${NC}"
+    
+    cat > /usr/local/bin/yubikey-u2f-init.sh << 'SCRIPT'
+#!/bin/bash
+#
+# User initialization script for YubiKey FIDO/U2F
+# Each user should run this script once to register their YubiKey
+#
+# Usage: yubikey-u2f-init.sh
+#
+
+echo "YubiKey FIDO/U2F Registration"
+echo "=============================="
+echo ""
+echo "This script will register your YubiKey with your account."
+echo "You will need to touch your YubiKey when prompted."
+echo ""
+
+# Create .config/Yubico directory
+mkdir -p ~/.config/Yubico
+
+# Check if user already has registered keys
+if [ -f ~/.config/Yubico/u2f_keys ]; then
+    echo "Warning: You already have registered YubiKeys."
+    echo "Continuing will overwrite existing registrations."
+    read -p "Continue? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cancelled"
+        exit 1
+    fi
+fi
+
+echo "Please touch your YubiKey when prompted..."
+echo "---"
+
+# Register YubiKey - pamu2fcfg generates the registration
+pamu2fcfg > ~/.config/Yubico/u2f_keys
+
+# Set proper permissions - only user can read
+chmod 600 ~/.config/Yubico/u2f_keys
+
+echo "---"
+echo "✓ YubiKey registered successfully!"
+echo "  Registration file: ~/.config/Yubico/u2f_keys"
+echo ""
+echo "IMPORTANT:"
+echo "- Your YubiKey is now registered with your account"
+echo "- You will need this YubiKey to login"
+echo "- Keep your YubiKey in a safe location"
+echo "- Consider registering a backup YubiKey"
+echo ""
+echo "To register additional YubiKeys, run:"
+echo "  pamu2fcfg >> ~/.config/Yubico/u2f_keys"
+echo ""
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/yubikey-u2f-init.sh
+    echo -e "${GREEN}✓ User initialization script created: /usr/local/bin/yubikey-u2f-init.sh${NC}"
+}
+
+# Main installation flow
+main() {
+    echo ""
+    detect_distro
+    install_packages
+    configure_pam
+    create_user_init_script
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "YubiKey Basic MFA Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review /tmp/pam-yubikey-basic-snippet.txt"
+    echo "2. Manually add PAM configuration to /etc/pam.d/ files"
+    echo "3. Each user runs: yubikey-u2f-init.sh"
+    echo "4. Test login with SSH: ssh user@hostname"
+    echo ""
+    echo "For more information, run: man pam_u2f"
+    echo ""
+}
+
+main "$@"

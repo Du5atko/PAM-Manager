@@ -1,0 +1,148 @@
+schema_version: "1.0"
+application_version: "0.2.0"
+repository_version: "1.0"
+
+metadata:
+  name: "Enterprise PAM Configuration"
+  description: "Multi-service authentication policies for enterprise"
+  author: "Security Team"
+  created: "2024-01-01T00:00:00"
+  modified: "2024-01-15T14:30:00"
+  tags: ["enterprise", "ldap", "cracklib", "production"]
+
+services:
+  - name: common-auth
+    description: "Standard login authentication policy"
+    platforms: ["ubuntu", "debian", "fedora"]
+    fragments:
+      - ref: pam-unix-auth
+        interface: auth
+      - ref: pam-cracklib-password
+        interface: password
+
+  - name: common-account
+    description: "Account validation and management"
+    platforms: ["ubuntu", "debian", "fedora"]
+    fragments:
+      - ref: pam-unix-account
+        interface: account
+
+  - name: common-session
+    description: "Session initialization and cleanup"
+    platforms: ["ubuntu", "debian", "fedora"]
+    fragments:
+      - ref: pam-unix-session
+        interface: session
+
+policy_fragments:
+  # ===== Authentication Fragments =====
+  - id: pam-unix-auth
+    description: "Unix/Linux standard authentication using SHA512"
+    control: required
+    module: pam_unix
+    category: auth
+    parameters:
+      sha512: "1"
+      use_authtok: "1"
+      shadow: "1"
+    platforms: ["ubuntu", "debian", "fedora", "rocky"]
+    security_level: high
+    tags: ["core", "standard"]
+
+  - id: pam-ldap-auth
+    description: "LDAP authentication for enterprise directory"
+    control: sufficient
+    module: pam_ldap
+    category: auth
+    parameters:
+      use_first_pass: "1"
+      minimum_uid: "1000"
+    dependencies: ["openldap-client"]
+    conflicts: ["pam-nis"]
+    platforms: ["ubuntu", "debian", "fedora"]
+    security_level: high
+    tags: ["enterprise", "ldap"]
+
+  # ===== Password Fragments =====
+  - id: pam-cracklib-password
+    description: "Password strength enforcement with cracklib"
+    control: required
+    module: pam_cracklib
+    category: password
+    parameters:
+      minlen: "12"
+      dcredit: "-1"
+      ucredit: "-1"
+      ocredit: "-1"
+      lcredit: "-1"
+      maxrepeat: "3"
+    dependencies: ["libcrack2"]
+    platforms: ["ubuntu", "debian", "fedora"]
+    security_level: maximum
+    tags: ["security", "password"]
+
+  # ===== Account Fragments =====
+  - id: pam-unix-account
+    description: "Unix account existence and validity checking"
+    control: required
+    module: pam_unix
+    category: account
+    platforms: ["ubuntu", "debian", "fedora"]
+    security_level: high
+    tags: ["core", "account"]
+
+  # ===== Session Fragments =====
+  - id: pam-unix-session
+    description: "Unix session initialization and login record"
+    control: required
+    module: pam_unix
+    category: session
+    parameters:
+      noxauth: "1"
+    platforms: ["ubuntu", "debian", "fedora"]
+    security_level: medium
+    tags: ["core", "session"]
+
+  - id: pam-limits-session
+    description: "Resource limits management"
+    control: required
+    module: pam_limits
+    category: session
+    parameters:
+      conf: "/etc/security/limits.conf"
+    platforms: ["ubuntu", "debian", "fedora"]
+    security_level: medium
+    tags: ["resource"]
+
+dependencies:
+  - package: libpam
+    platforms:
+      ubuntu: "1.3.1-5ubuntu4.7"
+      debian: "1.3.1-5+deb11u1"
+      fedora: "1.5.2-7.fc37"
+      rocky: "1.5.2-7.el9"
+
+  - package: libpam-cracklib
+    platforms:
+      ubuntu: "1.3.1-5ubuntu4.7"
+      debian: "1.3.1-5+deb11u1"
+      fedora: "1.5.2-7.fc37"
+
+  - package: libpam-ldapd
+    platforms:
+      ubuntu: "0.9.11-1"
+      debian: "0.9.11-1+deb11u1"
+      fedora: "0.9.11-10.fc37"
+
+renderers:
+  - name: pam-d-renderer
+    type: pam-d
+    target_path: /etc/pam.d/
+    format: lines
+    backup: true
+
+  - name: yaml-export
+    type: yaml
+    target_path: /etc/pam.d/config.yaml
+    format: structured
+    backup: true

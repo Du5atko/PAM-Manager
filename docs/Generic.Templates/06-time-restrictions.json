@@ -1,0 +1,40 @@
+{
+  "bundle_name": "06-time-restrictions",
+  "version": "1.0.0",
+  "title": "Login Time Restrictions",
+  "description": "Restrict user logins to specific days and time windows using PAM time module",
+  "author": "PAM Manager v9.0",
+  "category": "access_control",
+  "security_level": "medium",
+  "pam_services": ["login", "sshd"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": ["libpam-modules"], "package_manager": "apt"},
+    "fedora_rhel": {"packages": ["pam"], "package_manager": "dnf"},
+    "alpine": {"packages": ["pam"], "package_manager": "apk"},
+    "arch": {"packages": ["pam"], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "account_stack": [
+      "account required pam_time.so"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Standard PAM libraries"],
+    "pam_modules": ["pam_time"],
+    "configuration_files": ["/etc/security/time.conf"]
+  },
+  "notes": {
+    "time_zones": "Uses system timezone for time comparisons",
+    "format": "time.conf uses cron-like syntax",
+    "examples": [
+      "login;user;tty*;Al0800-1800 - Allow login every day 8am-6pm",
+      "login;developers;tty*;Wk0800-2000 - Allow login weekdays 8am-8pm",
+      "sshd;contractors;*;Mo0900-1700 - Allow SSH Monday 9am-5pm"
+    ],
+    "effective": "Applies immediately, no need to restart services"
+  },
+  "script_file": "06-time-restrictions.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}

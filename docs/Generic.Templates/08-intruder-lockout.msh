@@ -1,0 +1,487 @@
+#!/bin/bash
+#
+# PAM Bundle: 08-intruder-lockout
+# Title: Intruder Detection and Account Lockout
+# Description: Lock accounts after failed authentication attempts
+# Version: 1.0.0
+#
+# This bundle protects against brute force attacks by:
+# - Tracking failed authentication attempts
+# - Locking account after configurable number of failures
+# - Automatic unlock after configured timeout
+# - Comprehensive logging of all attempts
+#
+# Default: 5 failed attempts → 20 minute lockout
+#
+# INSTALLATION:
+# 1. Run: bash 08-intruder-lockout.msh
+# 2. Configure /etc/security/faillock.conf with your policies
+#
+
+set -e
+
+echo "=================================================="
+echo "Setting up Intruder Lockout Bundle"
+echo "=================================================="
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+detect_distro() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS=$ID
+    else
+        echo -e "${RED}Cannot detect Linux distribution${NC}"
+        exit 1
+    fi
+}
+
+install_packages() {
+    echo -e "${BLUE}Installing pam_faillock module...${NC}"
+    
+    case $OS in
+        debian|ubuntu)
+            apt update
+            apt install -y libpam-modules
+            ;;
+        fedora|rhel|centos)
+            dnf install -y pam
+            ;;
+        alpine)
+            apk add pam
+            ;;
+        arch|manjaro)
+            pacman -S --noconfirm pam
+            ;;
+    esac
+    echo -e "${GREEN}✓ Packages installed${NC}"
+}
+
+configure_pam() {
+    echo -e "${BLUE}Configuring PAM for intrusion detection...${NC}"
+    
+    for service in login sshd sudo; do
+        if [ -f /etc/pam.d/$service ]; then
+            cp /etc/pam.d/$service /etc/pam.d/$service.backup.faillock
+        fi
+    done
+    
+    cat > /tmp/pam-faillock-snippet.txt << 'EOF'
+# Intruder Detection and Lockout Configuration
+# Add to /etc/pam.d/login, /etc/pam.d/sshd, /etc/pam.d/sudo
+
+# Check for previous failed attempts BEFORE authenticating
+auth required pam_faillock.so preauth silent audit deny=5 unlock_time=1200
+
+# Standard password authentication
+auth required pam_unix.so nullok try_first_pass
+
+# Handle failed authentication - lock account if too many failures
+auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=1200
+
+# Handle successful authentication - clear failure counter
+auth sufficient pam_faillock.so authsucc
+
+EOF
+    echo -e "${GREEN}✓ PAM configuration template created${NC}"
+}
+
+setup_faillock_config() {
+    echo -e "${BLUE}Setting up faillock configuration...${NC}"
+    
+    # Create faillock directory
+    mkdir -p /var/run/faillock
+    chmod 700 /var/run/faillock
+    
+    if [ ! -f /etc/security/faillock.conf ]; then
+        cat > /etc/security/faillock.conf << 'FAILCONF'
+#
+# /etc/security/faillock.conf
+#
+# Configuration for pam_faillock module
+# Controls authentication failure tracking and account lockout
+#
+
+# Number of failed authentication attempts before lockout
+# Default: 3, Recommended: 5
+deny = 5
+
+# Interval (in seconds) for counting failed attempts
+# After this period, the counter is reset
+# Default: 900 (15 minutes)
+fail_interval = 900
+
+# Account unlock time (in seconds)
+# How long account stays locked after reaching deny threshold
+# Default: 600 (10 minutes)
+# Recommended for security: 1200 (20 minutes)
+unlock_time = 1200
+
+# Directory for faillock files
+# Default: /var/run/faillock
+# dir = /var/run/faillock
+
+# Enable root account lockout
+# Default: no (root not locked out)
+# Uncomment for maximum security (not recommended for production)
+# even_deny_root
+
+# Different unlock time for root (if even_deny_root is enabled)
+# root_unlock_time = 900
+
+# Audit all failed attempts
+# Default: no
+# Recommended: yes (for security auditing)
+audit
+
+# Be quiet on failed attempts (don't tell user account is locked)
+# Default: no
+# silent
+
+# Filesystem-based persistence (survives reboot)
+# Default: no (uses memory)
+# persist_dir = /var/lib/faillock
+
+FAILCONF
+        
+        chmod 644 /etc/security/faillock.conf
+        echo -e "${GREEN}✓ Created /etc/security/faillock.conf${NC}"
+    else
+        echo -e "${GREEN}✓ /etc/security/faillock.conf already exists${NC}"
+    fi
+}
+
+create_faillock_tools() {
+    echo -e "${BLUE}Creating faillock management tools...${NC}"
+    
+    cat > /usr/local/sbin/show-locked-accounts.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Show currently locked accounts
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+echo "Currently Locked Accounts"
+echo "========================="
+echo ""
+
+if [ ! -d /var/run/faillock ]; then
+    echo "No faillock directory found"
+    exit 0
+fi
+
+# Check for users with lockout
+COUNT=0
+for failfile in /var/run/faillock/*; do
+    if [ -f "$failfile" ]; then
+        USERNAME=$(basename "$failfile")
+        FAILURES=$(stat -f%z "$failfile" 2>/dev/null || stat -c%s "$failfile" 2>/dev/null)
+        
+        # Show user and attempt count
+        echo "  $USERNAME"
+        COUNT=$((COUNT + 1))
+    fi
+done
+
+if [ $COUNT -eq 0 ]; then
+    echo "  (No locked accounts)"
+else
+    echo ""
+    echo "Total locked: $COUNT account(s)"
+fi
+
+echo ""
+echo "To unlock an account:"
+echo "  sudo faillock --user <username> --reset"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/show-locked-accounts.sh
+    
+    cat > /usr/local/sbin/unlock-user.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Unlock a user account
+#
+
+if [ "$EUID" -ne 0 ]; then 
+    echo "Error: This script must be run as root"
+    exit 1
+fi
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 <username>"
+    exit 1
+fi
+
+USERNAME=$1
+
+# Check if user exists
+if ! id "$USERNAME" &>/dev/null; then
+    echo "Error: User '$USERNAME' does not exist"
+    exit 1
+fi
+
+# Reset faillock counter
+faillock --user "$USERNAME" --reset
+
+echo "✓ Account '$USERNAME' unlocked"
+echo ""
+echo "User can now login again"
+
+SCRIPT
+    
+    chmod 750 /usr/local/sbin/unlock-user.sh
+    
+    cat > /usr/local/bin/check-failed-attempts.sh << 'SCRIPT'
+#!/bin/bash
+#
+# Show failed login attempts for current or specified user
+#
+
+USER=${1:-$(whoami)}
+
+echo "Failed Login Attempts for User: $USER"
+echo "===================================="
+echo ""
+
+# Check faillock file
+FAILLOCK_FILE="/var/run/faillock/$USER"
+
+if [ ! -f "$FAILLOCK_FILE" ]; then
+    echo "No failed attempts recorded"
+else
+    SIZE=$(stat -c%s "$FAILLOCK_FILE" 2>/dev/null || stat -f%z "$FAILLOCK_FILE" 2>/dev/null)
+    # Each failure record is typically 112 bytes
+    ATTEMPTS=$((SIZE / 112))
+    
+    echo "Failed attempts: $ATTEMPTS"
+    
+    if [ "$ATTEMPTS" -ge 5 ]; then
+        echo ""
+        echo "⚠ Account is LOCKED OUT"
+        echo "  Time remaining: ~20 minutes (or until manual unlock)"
+    fi
+fi
+
+echo ""
+echo "Recent login attempts:"
+grep "$USER" /var/log/auth.log 2>/dev/null | tail -5 | awk '{print "  " $0}' || echo "  (no recent logs)"
+
+SCRIPT
+    
+    chmod 755 /usr/local/bin/check-failed-attempts.sh
+    echo -e "${GREEN}✓ Created faillock management tools${NC}"
+}
+
+create_faillock_documentation() {
+    echo -e "${BLUE}Creating faillock documentation...${NC}"
+    
+    cat > /usr/local/share/doc/intruder-lockout-README.txt << 'DOC'
+INTRUDER DETECTION AND ACCOUNT LOCKOUT - DOCUMENTATION
+========================================================
+
+PURPOSE:
+Protect accounts against brute force password attacks by:
+- Tracking failed authentication attempts
+- Locking account after configurable number of failures
+- Automatic unlock after timeout
+- Comprehensive audit logging
+
+DEFAULT BEHAVIOR:
+- 5 failed attempts → account locked
+- Locked for 20 minutes (1200 seconds)
+- Failure counter resets after 15 minutes of no attempts
+- Administrators can manually unlock accounts
+
+CONFIGURATION FILE:
+/etc/security/faillock.conf
+
+KEY SETTINGS:
+
+1. deny
+   - Number of failed attempts before lockout
+   - Default: 3, Recommended: 5
+   - Higher = more lenient, Lower = stricter
+
+2. fail_interval (seconds)
+   - Time window for counting failures
+   - Default: 900 (15 minutes)
+   - After this time with no failures, counter resets
+
+3. unlock_time (seconds)
+   - How long account stays locked
+   - Default: 600 (10 minutes)
+   - Recommended: 1200 (20 minutes)
+   - -1 = manual unlock only (very strict)
+
+4. audit
+   - Enable audit logging of all attempts
+   - Recommended: yes (for security compliance)
+
+MONITORING:
+
+1. See locked accounts:
+   sudo show-locked-accounts.sh
+
+2. Check failed attempts:
+   check-failed-attempts.sh <username>
+
+3. View recent attempts:
+   grep "Failed password" /var/log/auth.log | tail -10
+
+MANAGEMENT:
+
+1. Manually unlock user:
+   sudo faillock --user alice --reset
+   or
+   sudo unlock-user.sh alice
+
+2. Check user's failed attempts:
+   sudo faillock --user alice
+
+3. Reset all lockouts:
+   sudo faillock --reset
+
+POLICY EXAMPLES:
+
+Example 1: Standard Security
+   deny = 5
+   fail_interval = 900    (15 minutes)
+   unlock_time = 1200     (20 minutes)
+   Effect: 5 failures in 15 min → 20 min lockout
+
+Example 2: Strict Security
+   deny = 3
+   fail_interval = 600    (10 minutes)
+   unlock_time = 1800     (30 minutes)
+   Effect: 3 failures in 10 min → 30 min lockout
+
+Example 3: Lenient (for user-friendly)
+   deny = 10
+   fail_interval = 1200   (20 minutes)
+   unlock_time = 600      (10 minutes)
+   Effect: 10 failures in 20 min → 10 min lockout
+
+SECURITY CONSIDERATIONS:
+
+1. Brute Force Protection
+   - Locks out automated attacks
+   - Adds delay between attempts
+   - Makes password guessing infeasible
+
+2. Denial of Service Risk
+   - Attacker could lock out legitimate users
+   - Recommendation: Set reasonable deny count (5+)
+   - Administrators can unlock quickly
+
+3. Audit Trail
+   - All failures logged to /var/log/auth.log
+   - Review regularly for attack patterns
+   - Use for incident response
+
+TROUBLESHOOTING:
+
+1. User locked out:
+   - Check: faillock --user username
+   - Unlock: faillock --user username --reset
+   - Reset fail interval in faillock.conf
+
+2. Still can't login after unlock:
+   - Verify password is correct
+   - Check if user can login at all
+   - Try different authentication method
+
+3. Lockout not working:
+   - Verify pam_faillock.so in /etc/pam.d/
+   - Check /etc/security/faillock.conf syntax
+   - Restart services if configuration changed
+
+4. Too many false lockouts:
+   - Increase deny count
+   - Increase fail_interval (more time before reset)
+   - Increase unlock_time (for grace period)
+
+COMPLIANCE:
+
+NIST Guidelines:
+- Deny = 5-10 (prevents brute force)
+- unlock_time = 30 minutes (minimum)
+- Audit = enabled (logging required)
+
+PCI-DSS:
+- Maximum 6 failed attempts
+- 30-minute lockout minimum
+- Mandatory logging and monitoring
+
+HIPAA:
+- Login failure detection required
+- Automatic account lockout required
+- Audit trail must be maintained
+
+MONITORING BEST PRACTICES:
+
+Daily:
+- Review /var/log/auth.log for patterns
+- Check for multiple users with failures
+- Identify if attack is ongoing
+
+Weekly:
+- Show locked accounts and unlock patterns
+- Analyze failure sources (IP addresses)
+- Adjust policies if needed
+
+Monthly:
+- Full audit of failed login attempts
+- Review unlock frequency (too high = poor passwords)
+- Update security policies as needed
+
+DOC
+    
+    chmod 644 /usr/local/share/doc/intruder-lockout-README.txt
+    echo -e "${GREEN}✓ Created faillock documentation${NC}"
+}
+
+main() {
+    detect_distro
+    install_packages
+    configure_pam
+    setup_faillock_config
+    create_faillock_tools
+    create_faillock_documentation
+    
+    echo ""
+    echo -e "${GREEN}=================================================="
+    echo "Intruder Lockout Bundle Installation Complete!"
+    echo "==================================================${NC}"
+    echo ""
+    echo -e "${YELLOW}IMPORTANT SECURITY SETTINGS:${NC}"
+    echo "  Default: 5 failed attempts → 20 minute lockout"
+    echo "  Configuration: /etc/security/faillock.conf"
+    echo ""
+    echo "Management commands:"
+    echo "  - Show locked accounts: sudo show-locked-accounts.sh"
+    echo "  - Check user failures: check-failed-attempts.sh <user>"
+    echo "  - Unlock account: sudo unlock-user.sh <user>"
+    echo ""
+    echo "Next steps:"
+    echo "1. Review template: cat /tmp/pam-faillock-snippet.txt"
+    echo "2. Add PAM configuration to /etc/pam.d/login, sshd, sudo"
+    echo "3. Review /etc/security/faillock.conf for your policy"
+    echo "4. Test with intentional failed attempts"
+    echo "5. Monitor /var/log/auth.log"
+    echo ""
+    echo "For compliance requirements, see:"
+    echo "  /usr/local/share/doc/intruder-lockout-README.txt"
+    echo ""
+}
+
+main "$@"

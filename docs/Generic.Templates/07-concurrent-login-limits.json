@@ -1,0 +1,41 @@
+{
+  "bundle_name": "07-concurrent-login-limits",
+  "version": "1.0.0",
+  "title": "Concurrent Login Session Limits",
+  "description": "Limit the number of concurrent login sessions per user and maximum processes using PAM limits module",
+  "author": "PAM Manager v9.0",
+  "category": "resource_control",
+  "security_level": "medium",
+  "pam_services": ["login", "sshd", "sudo"],
+  "type": "Fragment",
+  "platforms": {
+    "debian_ubuntu": {"packages": ["libpam-modules", "libpam-cracklib"], "package_manager": "apt"},
+    "fedora_rhel": {"packages": ["pam", "pam-cracklib"], "package_manager": "dnf"},
+    "alpine": {"packages": ["pam"], "package_manager": "apk"},
+    "arch": {"packages": ["pam"], "package_manager": "pacman"}
+  },
+  "configuration": {
+    "session_stack": [
+      "session required pam_limits.so"
+    ]
+  },
+  "dependencies": {
+    "system_requirements": ["Standard PAM libraries"],
+    "pam_modules": ["pam_limits"],
+    "configuration_files": ["/etc/security/limits.conf"],
+    "system_limits": "kernel supports ulimit"
+  },
+  "notes": {
+    "resource_control": "Controls system resource usage per user",
+    "protects_from": "Fork bombs, resource exhaustion, DoS attacks",
+    "limits": [
+      "maxlogins - Maximum concurrent login sessions",
+      "mproc - Maximum processes per user",
+      "memlock - Maximum locked memory",
+      "nofile - Maximum open files"
+    ]
+  },
+  "script_file": "07-concurrent-login-limits.msh",
+  "created_at": "2026-08-16T00:00:00Z",
+  "modified_at": "2026-08-16T00:00:00Z"
+}
