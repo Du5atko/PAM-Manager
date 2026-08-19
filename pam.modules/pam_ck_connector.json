@@ -1,0 +1,51 @@
+{
+  "name": "pam_ck_connector",
+  "description": "ConsoleKit session connector",
+  "detailed_description": "ConsoleKit session integration module for managing user sessions. Registers sessions with ConsoleKit for proper session tracking and management. Primarily used on Debian-based desktop systems.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {},
+  "dependencies": [
+    "consolekit"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-ck-connector",
+  "package_name_rhel": null,
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 20,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "",
+  "notes": "Integrates with ConsoleKit for session management\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: DEBIAN, KALI_LINUX, LINUX_MINT, UBUNTU, NETBSD, OPENBSD\n- Required package names for installation-required platforms: DEBIAN: libpam-ck-connector, KALI_LINUX: libpam-ck-connector, LINUX_MINT: libpam-ck-connector, UBUNTU: libpam-ck-connector, NETBSD: pam_ck_connector, OPENBSD: pam_ck_connector\n- Platforms with no package metadata (manual build/port): ALMA_LINUX, CENTOS_STREAM, FEDORA, REDHAT, ROCKY_LINUX, FREEBSD\n- Additional tools needed for functionality: consolekit\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_ck_connector",
+  "package_name_netbsd": "pam_ck_connector"
+}

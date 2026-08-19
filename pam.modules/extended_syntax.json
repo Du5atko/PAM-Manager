@@ -1,0 +1,203 @@
+{
+  "schema_version": "1.0",
+  "description": "Extended PAM Control Syntax definitions",
+  "return_values": {
+    "success": {
+      "name": "success",
+      "description": "Success (PAM_SUCCESS)",
+      "explanation": "The module successfully completed the requested task."
+    },
+    "open_err": {
+      "name": "open_err",
+      "description": "Module open error",
+      "explanation": "Error loading or opening the PAM module."
+    },
+    "symbol_err": {
+      "name": "symbol_err",
+      "description": "Missing symbol in module",
+      "explanation": "Required symbol not found in the PAM module."
+    },
+    "service_err": {
+      "name": "service_err",
+      "description": "Service error",
+      "explanation": "Error in service configuration or service not found."
+    },
+    "system_err": {
+      "name": "system_err",
+      "description": "System error",
+      "explanation": "System error (e.g., memory allocation failure)."
+    },
+    "buf_err": {
+      "name": "buf_err",
+      "description": "Memory error",
+      "explanation": "Memory/buffer allocation error."
+    },
+    "perm_denied": {
+      "name": "perm_denied",
+      "description": "Permission denied",
+      "explanation": "Operation not permitted due to insufficient privileges."
+    },
+    "auth_err": {
+      "name": "auth_err",
+      "description": "Authentication error",
+      "explanation": "Authentication failed or error occurred during authentication."
+    },
+    "cred_insufficient": {
+      "name": "cred_insufficient",
+      "description": "Insufficient credentials",
+      "explanation": "Provided credentials are insufficient to proceed."
+    },
+    "authinfo_unavail": {
+      "name": "authinfo_unavail",
+      "description": "Authentication information not available",
+      "explanation": "Required authentication information is not available."
+    },
+    "user_unknown": {
+      "name": "user_unknown",
+      "description": "Unknown user",
+      "explanation": "The user is not known to the system."
+    },
+    "maxtries": {
+      "name": "maxtries",
+      "description": "Maximum tries exceeded",
+      "explanation": "Maximum number of authentication attempts exceeded."
+    },
+    "new_authtok_reqd": {
+      "name": "new_authtok_reqd",
+      "description": "New auth token required",
+      "explanation": "A new authentication token is required (e.g., password change needed)."
+    },
+    "acct_expired": {
+      "name": "acct_expired",
+      "description": "Account expired",
+      "explanation": "User account has expired."
+    },
+    "session_err": {
+      "name": "session_err",
+      "description": "Session error",
+      "explanation": "Error in session setup or management."
+    },
+    "cred_unavail": {
+      "name": "cred_unavail",
+      "description": "Credentials not available",
+      "explanation": "Credentials are not available."
+    },
+    "cred_expired": {
+      "name": "cred_expired",
+      "description": "Credentials expired",
+      "explanation": "User credentials have expired."
+    },
+    "cred_err": {
+      "name": "cred_err",
+      "description": "Credentials error",
+      "explanation": "Error in credential management."
+    },
+    "no_module_data": {
+      "name": "no_module_data",
+      "description": "Module has no data",
+      "explanation": "The module has no data available for this operation."
+    },
+    "conv_err": {
+      "name": "conv_err",
+      "description": "Communication error with application",
+      "explanation": "Communication error between PAM and the application."
+    },
+    "authtok_err": {
+      "name": "authtok_err",
+      "description": "Password/token error",
+      "explanation": "Error related to the authentication token or password."
+    },
+    "authtok_recover_err": {
+      "name": "authtok_recover_err",
+      "description": "Cannot recover password",
+      "explanation": "Unable to recover or reset the authentication token."
+    },
+    "authtok_lock_busy": {
+      "name": "authtok_lock_busy",
+      "description": "Password is locked",
+      "explanation": "The authentication token is locked by another process."
+    },
+    "authtok_disable_aging": {
+      "name": "authtok_disable_aging",
+      "description": "Cannot disable password aging",
+      "explanation": "Unable to disable password aging policy."
+    },
+    "try_again": {
+      "name": "try_again",
+      "description": "Try again",
+      "explanation": "Operation failed; caller should retry the operation."
+    },
+    "ignore": {
+      "name": "ignore",
+      "description": "Module does not affect outcome",
+      "explanation": "Module does not contribute to the success or failure decision."
+    },
+    "abort": {
+      "name": "abort",
+      "description": "Critical error",
+      "explanation": "Critical error; authentication stack should abort."
+    },
+    "authtok_expired": {
+      "name": "authtok_expired",
+      "description": "Password expired",
+      "explanation": "User password/token has expired and must be changed."
+    },
+    "module_unknown": {
+      "name": "module_unknown",
+      "description": "Unknown module",
+      "explanation": "The specified PAM module is unknown or not found."
+    },
+    "bad_item": {
+      "name": "bad_item",
+      "description": "Invalid item",
+      "explanation": "Invalid item or parameter passed to the module."
+    },
+    "conv_again": {
+      "name": "conv_again",
+      "description": "Repeat conversation",
+      "explanation": "Application should retry the conversation with the user."
+    },
+    "incomplete": {
+      "name": "incomplete",
+      "description": "Operation not complete",
+      "explanation": "Operation was not completed (e.g., multi-step process)."
+    },
+    "default": {
+      "name": "default",
+      "description": "All other return values",
+      "explanation": "Catch-all for any return value not explicitly specified."
+    }
+  },
+  "actions": {
+    "ignore": {
+      "name": "ignore",
+      "description": "Ignore the return value",
+      "explanation": "Ignore this return value and continue with the next module in the stack."
+    },
+    "bad": {
+      "name": "bad",
+      "description": "Mark as failure but continue",
+      "explanation": "Mark the entire stack as failed but continue processing remaining modules."
+    },
+    "die": {
+      "name": "die",
+      "description": "Terminate immediately as failure",
+      "explanation": "Terminate immediately and return failure. Do not process remaining modules."
+    },
+    "ok": {
+      "name": "ok",
+      "description": "Mark as success and continue",
+      "explanation": "Mark as success but continue processing remaining modules."
+    },
+    "done": {
+      "name": "done",
+      "description": "Terminate immediately as success (if no prior errors)",
+      "explanation": "Terminate immediately and return success if no prior errors. Otherwise continue normally."
+    },
+    "reset": {
+      "name": "reset",
+      "description": "Reset state and continue from clean slate",
+      "explanation": "Reset the PAM state and continue from a clean slate."
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "pam_cap",
+  "description": "POSIX capabilities for sessions",
+  "detailed_description": "POSIX capabilities module that assigns Linux capabilities to user processes. Restricts privileged operations without requiring root access. Fine-grained privilege management alternative to traditional suid binaries.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "OPENBSD",
+    "NETBSD"
+  ],
+  "parameters": {
+    "debug": "Enable debug mode"
+  },
+  "dependencies": [
+    "libcap"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-cap",
+  "package_name_rhel": "pam_cap",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 14,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_cap.html",
+  "notes": "Sets POSIX capabilities for user sessions\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, OPENBSD, NETBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam_cap, CENTOS_STREAM: pam_cap, DEBIAN: libpam-cap, FEDORA: pam_cap, KALI_LINUX: libpam-cap, LINUX_MINT: libpam-cap, REDHAT: pam_cap, ROCKY_LINUX: pam_cap, UBUNTU: libpam-cap, OPENBSD: pam_cap, NETBSD: pam_cap\n- Platforms with no package metadata (manual build/port): FREEBSD\n- Additional tools needed for functionality: libcap\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_cap",
+  "package_name_netbsd": "pam_cap"
+}

@@ -1,0 +1,60 @@
+{
+  "name": "pam_mongodb",
+  "description": "MongoDB database authentication backend",
+  "detailed_description": "PAM module using MongoDB as authentication backend. Allows user authentication against MongoDB database, useful for custom identity stores and microservices architectures.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "mongo_uri": "MongoDB connection URI",
+    "database": "Database name",
+    "collection": "Users collection name",
+    "username_field": "Username field in document",
+    "password_field": "Password field in document",
+    "password_hash": "Password hashing algorithm",
+    "timeout": "Connection timeout in seconds"
+  },
+  "dependencies": [
+    "libmongoc-1.0"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-mongodb",
+  "package_name_rhel": "pam-mongodb",
+  "package_name_freebsd": "pam-mongodb",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/pam-mongodb/pam-mongodb",
+  "notes": "Requires MongoDB server access. Supports authentication with custom user schemas.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-mongodb, CENTOS_STREAM: pam-mongodb, DEBIAN: pam-mongodb, FEDORA: pam-mongodb, KALI_LINUX: pam-mongodb, LINUX_MINT: pam-mongodb, REDHAT: pam-mongodb, ROCKY_LINUX: pam-mongodb, UBUNTU: pam-mongodb, FREEBSD: pam-mongodb, NETBSD: pam-mongodb, OPENBSD: pam-mongodb\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: libmongoc-1.0\n- GitHub repository: pam-mongodb/pam-mongodb\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-mongodb",
+  "package_name_netbsd": "pam-mongodb"
+}

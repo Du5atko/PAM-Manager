@@ -1,0 +1,58 @@
+{
+  "name": "pam_opnsense",
+  "description": "OPNsense firewall authentication",
+  "detailed_description": "PAM module for OPNsense firewall integration. Enables authentication against OPNsense firewall systems for centralized access control.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "opnsense_url": "OPNsense firewall URL",
+    "api_key": "OPNsense API key",
+    "api_secret": "OPNsense API secret",
+    "verify_ssl": "Verify SSL certificate",
+    "timeout": "API call timeout"
+  },
+  "dependencies": [
+    "curl"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-opnsense",
+  "package_name_rhel": "pam-opnsense",
+  "package_name_freebsd": "pam-opnsense",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "experimental",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/opnsense/pam-auth",
+  "notes": "Integrates with OPNsense firewall API. Useful for network appliance environments.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-opnsense, CENTOS_STREAM: pam-opnsense, DEBIAN: pam-opnsense, FEDORA: pam-opnsense, KALI_LINUX: pam-opnsense, LINUX_MINT: pam-opnsense, REDHAT: pam-opnsense, ROCKY_LINUX: pam-opnsense, UBUNTU: pam-opnsense, FREEBSD: pam-opnsense, NETBSD: pam-opnsense, OPENBSD: pam-opnsense\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: curl\n- GitHub repository: opnsense/pam-auth\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-opnsense",
+  "package_name_netbsd": "pam-opnsense"
+}

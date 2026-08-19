@@ -1,0 +1,36 @@
+{
+  "name": "pam_permit_nohostname",
+  "description": "Permit without hostname verification",
+  "detailed_description": "Legacy permissive module that permitted access without hostname verification. Now obsolete and unsupported on modern systems. Deprecated for security reasons.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [],
+  "parameters": {},
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": null,
+  "package_name_rhel": null,
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 100,
+  "deprecated": false,
+  "maintenance_status": "unmaintained",
+  "security_impact": "Low",
+  "documentation_url": "",
+  "notes": "Legacy module: permits access without hostname checks\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_permit_nohostname",
+  "package_name_netbsd": "pam_permit_nohostname"
+}

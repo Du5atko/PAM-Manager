@@ -1,0 +1,60 @@
+{
+  "name": "pam_php",
+  "description": "PHP scripting support for PAM",
+  "detailed_description": "PAM module enabling PHP-based authentication scripts. Integrates PHP with PAM for web-framework-friendly authentication logic.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT",
+    "PASSWORD",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "script_path": "Path to PHP authentication script",
+    "function_name": "PHP function to call",
+    "debug": "Enable debug output",
+    "php_version": "PHP version to use",
+    "timeout": "Script execution timeout"
+  },
+  "dependencies": [
+    "php-cli"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-php",
+  "package_name_rhel": "pam-php",
+  "package_name_freebsd": "pam-php",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/php-pam/pam-php",
+  "notes": "Useful for web developers. Reuse existing PHP logic in PAM.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-php, CENTOS_STREAM: pam-php, DEBIAN: pam-php, FEDORA: pam-php, KALI_LINUX: pam-php, LINUX_MINT: pam-php, REDHAT: pam-php, ROCKY_LINUX: pam-php, UBUNTU: pam-php, FREEBSD: pam-php, NETBSD: pam-php, OPENBSD: pam-php\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: php-cli\n- GitHub repository: php-pam/pam-php\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-php",
+  "package_name_netbsd": "pam-php"
+}

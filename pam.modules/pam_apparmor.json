@@ -7,10 +7,18 @@
     "SESSION"
   ],
   "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
     "DEBIAN",
+    "FEDORA",
     "KALI_LINUX",
     "LINUX_MINT",
-    "UBUNTU"
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
   ],
   "parameters": {},
   "dependencies": [
@@ -26,7 +34,7 @@
   "maintenance_status": "maintained",
   "security_impact": "Medium",
   "documentation_url": "https://gitlab.com/apparmor/apparmor/-/wikis/home",
-  "notes": "Applies AppArmor profiles on user login",
+  "notes": "Applies AppArmor profiles on user login\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: DEBIAN, KALI_LINUX, LINUX_MINT, UBUNTU, NETBSD, OPENBSD\n- Required package names for installation-required platforms: DEBIAN: libpam-apparmor, KALI_LINUX: libpam-apparmor, LINUX_MINT: libpam-apparmor, UBUNTU: libpam-apparmor, NETBSD: pam_apparmor, OPENBSD: pam_apparmor\n- Platforms with no package metadata (manual build/port): ALMA_LINUX, CENTOS_STREAM, FEDORA, REDHAT, ROCKY_LINUX, FREEBSD\n- Additional tools needed for functionality: apparmor\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
   "supported_extended_return_values": [
     "default",
     "ignore",
@@ -37,5 +45,7 @@
     "ignore",
     "ok",
     "reset"
-  ]
+  ],
+  "package_name_openbsd": "pam_apparmor",
+  "package_name_netbsd": "pam_apparmor"
 }

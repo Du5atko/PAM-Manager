@@ -1,0 +1,53 @@
+{
+  "name": "pam_lastlog",
+  "description": "Display time of last login",
+  "detailed_description": "Session notification module that displays the time and location of the user's previous login. Shows failed login attempts count when configured with showfailed parameter. Provides security awareness to users.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "OPENBSD",
+    "NETBSD"
+  ],
+  "parameters": {
+    "debug": "Enable debug mode",
+    "silent": "Don't display message",
+    "showfailed": "Show count of failed login attempts"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 17,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_lastlog.html",
+  "notes": "Shows user when they last logged in\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Platforms requiring additional installation: OPENBSD, NETBSD\n- Required package names for installation-required platforms: OPENBSD: pam_lastlog, NETBSD: pam_lastlog\n- Platforms with no package metadata (manual build/port): FREEBSD\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_lastlog",
+  "package_name_netbsd": "pam_lastlog"
+}

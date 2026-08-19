@@ -1,0 +1,59 @@
+{
+  "name": "pam_golang",
+  "description": "Go/Golang scripting support for PAM",
+  "detailed_description": "PAM module enabling Go-based authentication scripts. Provides high-performance custom authentication using Go language.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT",
+    "PASSWORD",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "plugin_path": "Path to compiled Go plugin",
+    "function_name": "Go function to call",
+    "debug": "Enable debug output",
+    "timeout": "Function execution timeout"
+  },
+  "dependencies": [
+    "golang-go"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-golang",
+  "package_name_rhel": "pam-golang",
+  "package_name_freebsd": "pam-golang",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/golang-pam/pam-golang",
+  "notes": "High-performance PAM module. Requires Go plugin compilation.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-golang, CENTOS_STREAM: pam-golang, DEBIAN: pam-golang, FEDORA: pam-golang, KALI_LINUX: pam-golang, LINUX_MINT: pam-golang, REDHAT: pam-golang, ROCKY_LINUX: pam-golang, UBUNTU: pam-golang, FREEBSD: pam-golang, NETBSD: pam-golang, OPENBSD: pam-golang\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: golang-go\n- GitHub repository: golang-pam/pam-golang\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: yes",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-golang",
+  "package_name_netbsd": "pam-golang"
+}

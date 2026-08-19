@@ -1,0 +1,59 @@
+{
+  "name": "pam_faillock",
+  "description": "Account lockout module for failed login attempts",
+  "detailed_description": "Account lockout module that prevents brute-force attacks by tracking failed login attempts. Automatically locks accounts after a configurable number of failures for a specified duration. Provides security auditing and can be configured differently for regular users and root.",
+  "category": "account",
+  "supported_facilities": [
+    "ACCOUNT",
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "deny": "Number of attempts before lockout",
+    "fail_interval": "Time period for counting failures (seconds)",
+    "unlock_time": "Time to keep user locked out (seconds)",
+    "even_deny_root": "Apply limit even to root",
+    "root_unlock_time": "Unlock time for root",
+    "audit": "Log all failed attempts",
+    "silent": "Don't print status messages",
+    "no_log_info": "Disable logging"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": null,
+  "package_name_rhel": "pam",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 5,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_faillock.html",
+  "notes": "RedHat/Fedora account lockout; Debian uses pam_tally2 or pam_unix\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, FEDORA, REDHAT, ROCKY_LINUX\n- Platforms requiring additional installation: NETBSD, OPENBSD\n- Required package names for installation-required platforms: NETBSD: pam_faillock, OPENBSD: pam_faillock\n- Platforms with no package metadata (manual build/port): DEBIAN, KALI_LINUX, LINUX_MINT, UBUNTU, FREEBSD\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_faillock",
+  "package_name_netbsd": "pam_faillock"
+}

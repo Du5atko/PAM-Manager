@@ -1,0 +1,52 @@
+{
+  "name": "pam_ftp",
+  "description": "Allow FTP anonymous login",
+  "detailed_description": "FTP legacy module that permits anonymous FTP login with specific user restrictions. Controls which users can login as anonymous FTP users. Primarily used for FTP service configuration.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "OPENBSD",
+    "NETBSD"
+  ],
+  "parameters": {
+    "users": "List of users to allow",
+    "debug": "Enable debug mode"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 25,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_ftp.html",
+  "notes": "Legacy module for FTP anonymous login\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Platforms requiring additional installation: OPENBSD, NETBSD\n- Required package names for installation-required platforms: OPENBSD: pam_ftp, NETBSD: pam_ftp\n- Platforms with no package metadata (manual build/port): FREEBSD\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_ftp",
+  "package_name_netbsd": "pam_ftp"
+}

@@ -1,0 +1,58 @@
+{
+  "name": "pam_8021x",
+  "description": "802.1X network authentication",
+  "detailed_description": "PAM module for 802.1X (IEEE 802.1X) network access control. Integrates network authentication with system authentication for network port access.",
+  "category": "account",
+  "supported_facilities": [
+    "ACCOUNT"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "eap_method": "EAP method (TLS, TTLS, PEAP)",
+    "network_device": "Network interface to authenticate",
+    "ca_cert": "CA certificate for server verification",
+    "user_cert": "User certificate path",
+    "user_key": "User key path",
+    "timeout": "Authentication timeout"
+  },
+  "dependencies": [
+    "wpa-supplicant"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-8021x",
+  "package_name_rhel": "pam-8021x",
+  "package_name_freebsd": "pam-8021x",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/8021x/pam-8021x",
+  "notes": "Network-level authentication integration. Requires network switch support.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-8021x, CENTOS_STREAM: pam-8021x, DEBIAN: pam-8021x, FEDORA: pam-8021x, KALI_LINUX: pam-8021x, LINUX_MINT: pam-8021x, REDHAT: pam-8021x, ROCKY_LINUX: pam-8021x, UBUNTU: pam-8021x, FREEBSD: pam-8021x, NETBSD: pam-8021x, OPENBSD: pam-8021x\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: wpa-supplicant\n- GitHub repository: 8021x/pam-8021x\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-8021x",
+  "package_name_netbsd": "pam-8021x"
+}
