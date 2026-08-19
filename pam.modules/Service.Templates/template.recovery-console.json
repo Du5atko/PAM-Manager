@@ -1,0 +1,7 @@
+{
+  "id": "recovery-console",
+  "description": "Recovery console, where user need to use physical terminal and specific FIDO/U2F token. After succesfull login, credential righst could be elevated by appropriate settings of sudo.",
+  "elements": [
+    "yubikey-emergency-rescue"
+  ]
+}

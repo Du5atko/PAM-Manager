@@ -1,0 +1,68 @@
+{
+  "id": "pam_faillock-lockout",
+  "description": "Lock account after N failed authentication attempts. Protects against brute force attacks with configurable lockout duration.",
+  "module": "pam_faillock",
+  "interface": "auth",
+  "parameters": {
+    "preauth": "Check for locked status before authentication",
+    "authfail": "Record failed attempt",
+    "authsucc": "Record successful attempt and clear failures",
+    "deny": "Number of failed attempts before lockout (default: 5)",
+    "fail_interval": "Time window in seconds (default: 900)",
+    "unlock_time": "Lockout duration in seconds (default: 1200)"
+  },
+  "parameter_help": {
+    "preauth": "Check if account is locked BEFORE attempting auth. If locked, fail immediately.",
+    "authfail": "Record failed auth attempt to faillock database",
+    "authsucc": "Clear failed attempts on successful auth",
+    "deny": "Lock account after N failed attempts",
+    "fail_interval": "Consider only failures within last N seconds",
+    "unlock_time": "Keep account locked for N seconds"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "authentication",
+    "security",
+    "brute-force",
+    "lockout",
+    "attack-prevention"
+  ],
+  "bundle_source": [
+    "08-intruder-lockout"
+  ],
+  "pam_stack_examples": [
+    "auth required pam_faillock.so preauth",
+    "auth required pam_unix.so",
+    "auth [default=die] pam_faillock.so authfail",
+    "auth sufficient pam_faillock.so authsucc"
+  ],
+  "security_level": "critical",
+  "typical_configuration": {
+    "deny": "5 failed attempts",
+    "fail_interval": "900 seconds (15 minutes)",
+    "unlock_time": "1200 seconds (20 minutes)"
+  },
+  "database": {
+    "location": "/var/run/faillock/",
+    "permissions": "Per-user failure tracking",
+    "reset": "Automatic after unlock_time"
+  },
+  "administrative_tools": [
+    "faillock --user <username> (check status)",
+    "faillock --user <username> --reset (manual unlock)"
+  ],
+  "benefits": [
+    "Effective brute force prevention",
+    "Automatic lockout and unlock",
+    "Persistent across reboots (uses /var/lib/faillock or /var/run/faillock)",
+    "No configuration needed for defaults"
+  ],
+  "notes": "CRITICAL for security. Essential on any login interface. Always use with preauth and authfail/authsucc structure.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

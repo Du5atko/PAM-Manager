@@ -1,0 +1,60 @@
+{
+  "id": "pam_env-variables",
+  "description": "Set environment variables based on service or login context. Enables conditional behavior based on login origin (local vs remote).",
+  "module": "pam_env",
+  "interface": "session",
+  "parameters": {
+    "conffile": "Path to pam_env.conf file",
+    "readenv": "Whether to read variable definitions (default: 1)"
+  },
+  "parameter_help": {
+    "conffile": "Configuration file with environment variable definitions",
+    "readenv": "Set to 0 to disable reading from file"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "session",
+    "environment",
+    "configuration",
+    "scripting"
+  ],
+  "bundle_source": [
+    "09-environment-login-type"
+  ],
+  "pam_stack_examples": [
+    "session optional pam_env.so conffile=/etc/security/pam_env.local.conf (in /etc/pam.d/login)",
+    "session optional pam_env.so conffile=/etc/security/pam_env.remote.conf (in /etc/pam.d/sshd)"
+  ],
+  "security_level": "low",
+  "configuration_format": {
+    "file": "pam_env.conf",
+    "syntax": "VARIABLE DEFAULT=value"
+  },
+  "configuration_examples": [
+    "LOGIN_ORIGIN DEFAULT=local",
+    "CONSOLE_SESSION DEFAULT=yes",
+    "SSH_SESSION DEFAULT=no"
+  ],
+  "use_cases": [
+    "Set LOGIN_ORIGIN (local vs remote)",
+    "Set different PATH for different services",
+    "Configure shell behavior based on login type",
+    "Set audit environment variables",
+    "Enable conditional scripts in ~/.bashrc"
+  ],
+  "shell_usage": "Variables available in shell scripts via $VARIABLE_NAME",
+  "benefits": [
+    "Simple way to detect login origin",
+    "Enables service-specific behavior",
+    "No scripting required",
+    "Works across all shells"
+  ],
+  "notes": "Commonly used with conditional shell logic. Example: if [ \"$LOGIN_ORIGIN\" = \"remote\" ]; then ...",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

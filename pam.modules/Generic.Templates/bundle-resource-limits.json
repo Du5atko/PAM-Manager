@@ -1,0 +1,97 @@
+{
+  "id": "bundle-resource-limits",
+  "bundle_name": "Resource and Session Limits",
+  "version": "1.0.0",
+  "title": "Concurrent Logins and Resource Control",
+  "description": "Limit concurrent logins, processes, and system resources per user to prevent fork bombs",
+  "category": "resource_control",
+  "security_level": "medium",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-resource-limits",
+      "import": "../Element.Templates/template.resource-limits.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-modules"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "07-concurrent-login-limits.msh",
+  "deployment_requirements": [
+    "Configure /etc/security/limits.conf",
+    "Test with actual usage patterns"
+  ],
+  "management_tools": [
+    "show-current-limits.sh",
+    "check-active-logins.sh",
+    "check-resource-usage.sh"
+  ],
+  "configuration_files": [
+    "/etc/security/limits.conf"
+  ],
+  "testing_steps": [
+    "1. Configure limits.conf",
+    "2. Test concurrent logins",
+    "3. Monitor with check-resource-usage.sh"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

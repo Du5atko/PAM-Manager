@@ -1,0 +1,115 @@
+{
+  "id": "pam_pkcs11-smartcard",
+  "description": "PKCS#11 based smart card authentication using X.509 certificates. Highest security factor for local console authentication.",
+  "module": "pam_pkcs11",
+  "interface": "auth",
+  "parameters": {
+    "pkcs11_module": "PKCS#11 module to use (e.g., opensc)",
+    "config_file": "Path to pam_pkcs11.conf (default: /etc/pam_pkcs11.conf)"
+  },
+  "parameter_help": {
+    "pkcs11_module": "PKCS#11 module name. Usually 'opensc' for OpenSC library.",
+    "config_file": "Configuration file specifying how to validate certificates"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-pkcs11, libpcsclite1, libopensc6",
+    "fedora_rhel": "pam_pkcs11, pcsc-lite, opensc",
+    "alpine": "opensc",
+    "arch": "opensc"
+  },
+  "tags": [
+    "authentication",
+    "smartcard",
+    "certificate",
+    "pkcs11",
+    "x509",
+    "maximum-security"
+  ],
+  "bundle_source": [
+    "12-mfa-cert-otp"
+  ],
+  "pam_stack_examples": [
+    "auth required pam_unix.so",
+    "auth required pam_pkcs11.so",
+    "auth required pam_oath.so usersfile=/etc/users.oath window=10"
+  ],
+  "security_level": "critical",
+  "authentication_factors": {
+    "factor1": "Password (something you know)",
+    "factor2": "Smart card with X.509 certificate (something you have)",
+    "factor3": "Private key on card (something you have - cannot be extracted)"
+  },
+  "hardware_requirements": [
+    "USB Smart Card Reader",
+    "Smart cards with X.509 certificates",
+    "Valid private keys on cards (non-extractable)",
+    "PCSC daemon running on system"
+  ],
+  "infrastructure_requirements": [
+    "Certificate Authority (CA)",
+    "PKI infrastructure for issuing certificates",
+    "CRL (Certificate Revocation List) or OCSP support",
+    "Certificate validation processes",
+    "Card reader and driver installation"
+  ],
+  "configuration": {
+    "file": "/etc/pam_pkcs11.conf",
+    "contains": [
+      "use_pkcs11_module = opensc",
+      "verify_certificate = yes",
+      "check_cert_validity = yes",
+      "ca_dir = /etc/pam_pkcs11/ca_dir",
+      "public_key_dir = /etc/pam_pkcs11/public_keys"
+    ]
+  },
+  "certificate_validation": [
+    "Verify X.509 certificate structure",
+    "Check certificate validity period",
+    "Validate certificate chain to trusted CA",
+    "Check certificate revocation status",
+    "Extract user identity from certificate"
+  ],
+  "limitations": [
+    "Local authentication only (not suitable for SSH remote)",
+    "Requires physical card reader present",
+    "Complex infrastructure setup (weeks to months)",
+    "High implementation cost",
+    "Ongoing certificate management required",
+    "User training needed"
+  ],
+  "deployment_steps": [
+    "1. Setup PCSC daemon (pcscd)",
+    "2. Install PKCS#11 library (usually opensc)",
+    "3. Configure pam_pkcs11.conf",
+    "4. Setup certificate validation",
+    "5. Issue user certificates to smart cards",
+    "6. Test smart card detection",
+    "7. Configure PAM stack",
+    "8. Test with actual smart cards"
+  ],
+  "use_cases": [
+    "Military and government systems",
+    "Financial institutions",
+    "Critical infrastructure",
+    "Defense contractors",
+    "Highly regulated environments",
+    "Top-secret data access"
+  ],
+  "benefits": [
+    "Highest authentication security available",
+    "Private key never leaves smart card",
+    "Cannot be compromised by malware on workstation",
+    "Certificate-based identity verification",
+    "Audit trail and non-repudiation"
+  ],
+  "comparison_other_mfa": {
+    "certificate_otp": "Maximum security (3 factors)",
+    "otp_only": "Good security (2 factors)",
+    "yubikey": "Strong security (2 factors, hardware)",
+    "password_only": "Basic security (1 factor)"
+  },
+  "recovery_procedure": "Requires backup smart card or alternative access method. Loss of card creates major security incident.",
+  "notes": "Enterprise/government only. Most complex to setup. Requires dedicated PKI team. Worth it for highest security needs.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

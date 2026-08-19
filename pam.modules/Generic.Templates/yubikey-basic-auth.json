@@ -1,0 +1,9 @@
+{
+  "packages": {
+    "Debian/Ubuntu": [
+      "pamu2fcfg",
+      "pamu2fcfg"
+    ]
+  },
+  "scripts": []
+}

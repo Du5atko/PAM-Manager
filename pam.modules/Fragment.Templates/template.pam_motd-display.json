@@ -1,0 +1,41 @@
+{
+  "id": "pam_motd-display",
+  "description": "Display system Message of the Day to users at login. Standard PAM session module for informing users.",
+  "module": "pam_motd",
+  "interface": "session",
+  "parameters": {
+    "motd": "Path to MOTD file (default: /etc/motd or /etc/motd.d/)",
+    "noupdate": "Don't run motd update script"
+  },
+  "parameter_help": {
+    "motd": "Alternative MOTD file path. Can be used for service-specific messages.",
+    "noupdate": "Skip dynamic MOTD generation"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "session",
+    "communication",
+    "user-info",
+    "messaging"
+  ],
+  "bundle_source": [
+    "04-motd-userspecific"
+  ],
+  "pam_stack_examples": [
+    "session optional pam_motd.so (display /etc/motd)",
+    "session optional pam_motd.so motd=/etc/motd.custom"
+  ],
+  "security_level": "low",
+  "notes": "Often combined with pam_exec to show dynamic messages. Common use: display system status, security warnings, maintenance notices, important announcements.",
+  "files": {
+    "system_motd": "/etc/motd or /etc/motd.d/*",
+    "user_motd": "~/.motd (when using with pam_exec)"
+  },
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

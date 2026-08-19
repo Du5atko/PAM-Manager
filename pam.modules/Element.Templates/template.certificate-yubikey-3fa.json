@@ -1,0 +1,140 @@
+{
+  "id": "element-certificate-otp-3fa",
+  "name": "Certificate + FIDO/U2F Three-Factor Authentication",
+  "description": "Maximum security with smart card certificate + password + FIDO/U2F for government/military systems",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": [
+    "login"
+  ],
+  "fragments": [
+    {
+      "module": "pam_unix",
+      "interface": "auth",
+      "config": {
+        "sha512": true,
+        "shadow": true
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_unix-basic"
+    },
+    {
+      "module": "pam_pkcs11",
+      "interface": "auth",
+      "config": {
+        "pkcs11_module": "opensc"
+      },
+      "control_flag": "required",
+      "ordering": 2,
+      "fragment_ref": "pam_pkcs11-smartcard"
+    },
+    {
+      "module": "pam_u2f",
+      "interface": "auth",
+      "config": {
+        "openasuser": true
+      },
+      "control_flag": "required",
+      "ordering": 2,
+      "fragment_ref": "pam_u2f-yubikey"
+    }
+  ],
+  "pam_configuration": {
+    "auth": [
+      "auth required pam_unix.so sha512 shadow",
+      "auth required pam_pkcs11.so",
+      "auth required pam_u2f.so openasuser"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-pkcs11",
+      "libpcsclite1",
+      "libopensc6",
+      "libpam-u2f",
+      "pamu2fcfg"
+    ],
+    "fedora_rhel": [
+      "pam_pkcs11",
+      "pcsc-lite",
+      "opensc",
+      "pam-u2f",
+      "pamu2fcfg"
+    ],
+    "alpine": [
+      "opensc",
+      "pam-u2f"
+    ],
+    "arch": [
+      "opensc",
+      "pam-u2f"
+    ]
+  },
+  "configuration_files": [
+    "/etc/pam_pkcs11.conf (certificate validation)",
+    "~/.config/Yubico/u2f_keys (per user key file)"
+  ],
+  "authentication_factors": {
+    "factor1": "Something you know: System password",
+    "factor2": "Something you have: Smart card with certificate",
+    "factor3": "Something you have: Yubico or another FIDO/U2F device"
+  },
+  "hardware_requirements": [
+    "USB Smart Card Reader",
+    "Smart cards with X.509 certificates",
+    "Private keys on cards (non-extractable)",
+    "FIDO/U2F device (mostly Yubikey)"
+  ],
+  "infrastructure_requirements": [
+    "Certificate Authority (CA)",
+    "PKI certificate management",
+    "CRL/OCSP support",
+    "Card reader driver installation",
+    "PCSC daemon (pcscd)"
+  ],
+  "deployment_requirements": [
+    "Complex PKI infrastructure setup (weeks/months)",
+    "Trained IT staff",
+    "High implementation cost",
+    "Ongoing certificate management",
+    "Hardware maintenance"
+  ],
+  "management_tools": [
+    "test-smartcard.sh (detect card reader)",
+    "yubikey-enroll.sh (enroll user)"
+  ],
+  "limitations": [
+    "Local authentication ONLY (not for SSH remote)",
+    "Requires physical card reader",
+    "Complex infrastructure",
+    "High cost",
+    "Ongoing certificate renewals",
+    "User training required"
+  ],
+  "use_cases": [
+    "Military and government systems",
+    "Financial institutions",
+    "Critical infrastructure protection",
+    "Defense contractors",
+    "Top-secret data access"
+  ],
+  "bundle_source": "12-mfa-cert-otp",
+  "notes": "CRITICAL: Enterprise/government only. Most complex to setup. Requires dedicated PKI team. Highest security available.",
+  "testing_steps": [
+    "1. Setup PCSC daemon: systemctl start pcscd",
+    "2. Test smartcard detection: test-smartcard.sh",
+    "3. Enroll user: cert-otp-enroll.sh username",
+    "4. Test login with password + card + OTP",
+    "5. Verify all three factors required"
+  ],
+  "recovery_procedure": "Requires backup smart card. Loss of card creates major security incident.",
+  "comparison": {
+    "certificate_otp": "Maximum security (3 factors)",
+    "otp_only": "Good security (2 factors)",
+    "yubikey": "Strong security (2 factors, hardware)",
+    "password_only": "Basic security (1 factor)"
+  },
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

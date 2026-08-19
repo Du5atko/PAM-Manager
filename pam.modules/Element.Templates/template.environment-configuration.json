@@ -1,0 +1,79 @@
+{
+  "id": "element-environment-configuration",
+  "name": "Login Type Environment Configuration",
+  "description": "Set environment variables based on login origin (local vs remote) for conditional behavior",
+  "category": "session",
+  "security_level": "low",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_env",
+      "interface": "session",
+      "config": {
+        "conffile": "/etc/security/pam_env.conf"
+      },
+      "control_flag": "optional",
+      "ordering": 1,
+      "fragment_ref": "pam_env-variables"
+    }
+  ],
+  "pam_configuration": {
+    "session_login": [
+      "session optional pam_env.so conffile=/etc/security/pam_env.local.conf"
+    ],
+    "session_sshd": [
+      "session optional pam_env.so conffile=/etc/security/pam_env.remote.conf"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-modules"
+    ],
+    "fedora_rhel": [
+      "pam"
+    ],
+    "alpine": [
+      "pam"
+    ],
+    "arch": [
+      "pam"
+    ]
+  },
+  "configuration_files": [
+    "/etc/security/pam_env.local.conf (local login environment)",
+    "/etc/security/pam_env.remote.conf (SSH/remote environment)"
+  ],
+  "pam_env_examples": {
+    "local": [
+      "LOGIN_ORIGIN DEFAULT=local",
+      "CONSOLE_SESSION DEFAULT=yes"
+    ],
+    "remote": [
+      "LOGIN_ORIGIN DEFAULT=remote",
+      "SSH_SESSION DEFAULT=yes"
+    ]
+  },
+  "deployment_requirements": [
+    "Create separate pam_env.conf files for different services",
+    "Update /etc/pam.d/login and /etc/pam.d/sshd separately"
+  ],
+  "management_tools": [
+    "check-login-type.sh (user command to check origin)",
+    "setup-login-prompt.sh (setup conditional prompt)",
+    "verify-pam-env.sh (admin verification)"
+  ],
+  "bundle_source": "09-environment-login-type",
+  "notes": "Variables available in shell scripts via $VARIABLE_NAME. Useful for audit logging and conditional shell behavior.",
+  "shell_usage": "if [ \"$LOGIN_ORIGIN\" = \"remote\" ]; then ... fi",
+  "testing_steps": [
+    "1. Create pam_env.conf files with different settings",
+    "2. Login locally: check-login-type.sh (should show local)",
+    "3. Login via SSH: check-login-type.sh (should show remote)",
+    "4. Test shell conditional based on LOGIN_ORIGIN"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

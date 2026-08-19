@@ -1,0 +1,101 @@
+{
+  "id": "element-otp-mfa",
+  "name": "OTP/HOTP Two-Factor Authentication",
+  "description": "Two-factor authentication using mobile authenticator apps (Google Authenticator, Microsoft Authenticator, etc.)",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_unix",
+      "interface": "auth",
+      "config": {
+        "sha512": true,
+        "shadow": true,
+        "try_first_pass": true
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_unix-basic"
+    },
+    {
+      "module": "pam_oath",
+      "interface": "auth",
+      "config": {
+        "usersfile": "/etc/users.oath",
+        "window": 10
+      },
+      "control_flag": "required",
+      "ordering": 2,
+      "fragment_ref": "pam_oath-otp"
+    }
+  ],
+  "pam_configuration": {
+    "auth": [
+      "auth required pam_unix.so sha512 shadow try_first_pass",
+      "auth required pam_oath.so usersfile=/etc/users.oath window=10"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-oath",
+      "oathtool"
+    ],
+    "fedora_rhel": [
+      "pam-oath",
+      "oathtool"
+    ],
+    "alpine": [
+      "oath-toolkit"
+    ],
+    "arch": [
+      "oath-toolkit"
+    ]
+  },
+  "configuration_files": [
+    "/etc/users.oath (OTP secrets, permissions: 600)"
+  ],
+  "users_oath_format": "HOTP username - SECRET or TOTP username - SECRET",
+  "supported_apps": [
+    "Google Authenticator",
+    "Microsoft Authenticator",
+    "Aegis Authenticator",
+    "FreeOTP",
+    "Authy",
+    "LastPass Authenticator"
+  ],
+  "deployment_requirements": [
+    "oath-toolkit package installed",
+    "oathtool command available",
+    "/etc/users.oath properly configured",
+    "Users have authenticator app installed on phone"
+  ],
+  "management_tools": [
+    "otp-user-enroll.sh (enroll user with OTP)",
+    "otp-verify-enrollment.sh (verify OTP secret)",
+    "otp-list-enrolled.sh (list enrolled users)"
+  ],
+  "bundle_source": "11-mfa-otp-hotp",
+  "enrollment_workflow": [
+    "1. Admin: otp-user-enroll.sh username",
+    "2. Admin: Display QR code to user",
+    "3. User: Scan QR code with authenticator app",
+    "4. User: Verify with otp-verify-enrollment.sh",
+    "5. User: Login with password + 6-digit code"
+  ],
+  "secret_generation": "oathtool --totp SECRET (generates current code)",
+  "authentication_process": "User enters password, then 6-digit code from phone display",
+  "notes": "Perfect for enterprise 2FA. Works anywhere phone has signal. No hardware required. Scalable to thousands of users.",
+  "testing_steps": [
+    "1. Enroll test user: otp-user-enroll.sh testuser",
+    "2. User scans QR code with phone",
+    "3. Verify enrollment: otp-verify-enrollment.sh testuser",
+    "4. Test login: password + 6-digit code",
+    "5. Verify successful authentication"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

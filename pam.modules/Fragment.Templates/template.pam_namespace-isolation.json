@@ -1,0 +1,57 @@
+{
+  "id": "pam_namespace-isolation",
+  "description": "Create isolated mount namespace for each user session. Each user gets private /tmp and /var/tmp preventing access to other users' files.",
+  "module": "pam_namespace",
+  "interface": "session",
+  "parameters": {
+    "conffile": "Path to namespace.conf file (default: /etc/security/namespace.conf)",
+    "debug": "Enable debug logging"
+  },
+  "parameter_help": {
+    "conffile": "Configuration file defining mount namespace rules",
+    "debug": "Enable verbose debug output to syslog"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-namespaces",
+    "fedora_rhel": "pam-namespaces",
+    "alpine": "pam-namespace",
+    "arch": "pam-namespace"
+  },
+  "tags": [
+    "session",
+    "isolation",
+    "security",
+    "namespace",
+    "container"
+  ],
+  "bundle_source": [
+    "05-private-namespace"
+  ],
+  "pam_stack_examples": [
+    "session required pam_namespace.so (use default /etc/security/namespace.conf)"
+  ],
+  "security_level": "high",
+  "kernel_requirement": "Linux 3.8+ (namespace support)",
+  "configuration_example": {
+    "file": "/etc/security/namespace.conf",
+    "entries": [
+      "/tmp /tmp/%U user 0755 root",
+      "/var/tmp /var/tmp/%U user 0755 root"
+    ],
+    "tokens": {
+      "%U": "Username",
+      "user": "Namespace type",
+      "0755": "Directory permissions",
+      "root": "Directory owner"
+    }
+  },
+  "benefits": [
+    "Each user session gets isolated /tmp space",
+    "Prevents users from accessing other users' temporary files",
+    "Minimal performance overhead",
+    "Works in containers and VMs"
+  ],
+  "notes": "Requires kernel namespace support and proper /etc/security/namespace.conf configuration. Provides strong session isolation.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

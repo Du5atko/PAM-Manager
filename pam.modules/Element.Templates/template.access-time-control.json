@@ -1,0 +1,71 @@
+{
+  "id": "element-access-time-control",
+  "name": "Time-Based Access Control",
+  "description": "Restrict user logins to specific days and time windows for business hours or shift-based access",
+  "category": "access_control",
+  "security_level": "medium",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_time",
+      "interface": "account",
+      "config": {
+        "conffile": "/etc/security/time.conf"
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_time-access"
+    }
+  ],
+  "pam_configuration": {
+    "account": [
+      "account required pam_time.so"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-modules"
+    ],
+    "fedora_rhel": [
+      "pam"
+    ],
+    "alpine": [
+      "pam"
+    ],
+    "arch": [
+      "pam"
+    ]
+  },
+  "configuration_files": [
+    "/etc/security/time.conf (time-based access rules)"
+  ],
+  "time_conf_format": "service;user;tty;day-of-week HH:MM-HH:MM",
+  "time_conf_examples": [
+    "login;user1;tty*;MoTuWeThFr0800-1800 (Monday-Friday 8am-6pm)",
+    "login;developers;*;Al0800-2000 (All days 8am-8pm)",
+    "sshd;contractors;*;Mo0900-1700 (Monday 9am-5pm)",
+    "sshd;admins;*;Al (All times, all days)"
+  ],
+  "deployment_requirements": [
+    "Configure /etc/security/time.conf",
+    "System timezone properly set",
+    "Service restart may not be needed (effective immediately)"
+  ],
+  "management_tools": [
+    "check-time-policy.sh (check policies)",
+    "show-current-policies.sh (list all policies)"
+  ],
+  "bundle_source": "06-time-restrictions",
+  "notes": "Effective immediately without service restart. Great for: business hours enforcement, contractor access control, emergency access windows.",
+  "testing_steps": [
+    "1. Configure time.conf with test policies",
+    "2. Test outside allowed hours (login should fail)",
+    "3. Test within allowed hours (login should succeed)",
+    "4. Use check-time-policy.sh to verify configuration"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

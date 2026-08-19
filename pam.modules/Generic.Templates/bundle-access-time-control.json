@@ -1,0 +1,96 @@
+{
+  "id": "bundle-access-time-control",
+  "bundle_name": "Time-Based Access Control",
+  "version": "1.0.0",
+  "title": "Login Time Restrictions",
+  "description": "Restrict user logins to specific days and time windows for business hours or shift-based access",
+  "category": "access_control",
+  "security_level": "medium",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-access-time-control",
+      "import": "../Element.Templates/template.access-time-control.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-modules"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "06-time-restrictions.msh",
+  "deployment_requirements": [
+    "Configure /etc/security/time.conf",
+    "System timezone properly set"
+  ],
+  "management_tools": [
+    "check-time-policy.sh",
+    "show-current-policies.sh"
+  ],
+  "configuration_files": [
+    "/etc/security/time.conf"
+  ],
+  "testing_steps": [
+    "1. Configure time.conf",
+    "2. Test outside allowed hours (should fail)",
+    "3. Test within allowed hours (should succeed)"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

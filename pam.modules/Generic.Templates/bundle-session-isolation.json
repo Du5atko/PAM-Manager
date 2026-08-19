@@ -1,0 +1,97 @@
+{
+  "id": "bundle-session-isolation",
+  "bundle_name": "Session Isolation",
+  "version": "1.0.0",
+  "title": "Private Namespace Isolation",
+  "description": "Isolate /tmp and /var/tmp per user session with private mount namespaces",
+  "category": "session",
+  "security_level": "high",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-session-isolation",
+      "import": "../Element.Templates/template.session-isolation.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-namespaces"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam-namespaces"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam-namespace"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam-namespace"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam-namespaces"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "05-private-namespace.msh",
+  "deployment_requirements": [
+    "Linux kernel 3.8+ (namespace support)",
+    "Proper /etc/security/namespace.conf",
+    "pam_namespace module"
+  ],
+  "management_tools": [
+    "check-namespace.sh",
+    "verify-namespace-isolation.sh"
+  ],
+  "configuration_files": [
+    "/etc/security/namespace.conf"
+  ],
+  "testing_steps": [
+    "1. Verify namespace.conf",
+    "2. User login and check /tmp",
+    "3. Run verify-namespace-isolation.sh"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

@@ -1,0 +1,100 @@
+{
+  "id": "element-group-based-permissions",
+  "name": "Group-Based File Permissions",
+  "description": "Set different file creation permissions (umask) based on group membership for team collaboration",
+  "category": "session",
+  "security_level": "medium",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_succeed_if",
+      "interface": "session",
+      "config": {
+        "user": "notingroup developers",
+        "quiet": true
+      },
+      "control_flag": "[success=1 default=ignore]",
+      "ordering": 1,
+      "fragment_ref": "pam_succeed_if-conditional"
+    },
+    {
+      "module": "pam_umask",
+      "interface": "session",
+      "config": {
+        "umask": "0022"
+      },
+      "control_flag": "optional",
+      "ordering": 2,
+      "fragment_ref": "pam_umask-permissions"
+    },
+    {
+      "module": "pam_umask",
+      "interface": "session",
+      "config": {
+        "umask": "0002"
+      },
+      "control_flag": "optional",
+      "ordering": 3,
+      "fragment_ref": "pam_umask-permissions"
+    }
+  ],
+  "pam_configuration": {
+    "session": [
+      "session [success=1 default=ignore] pam_succeed_if.so quiet user notingroup developers",
+      "session optional pam_umask.so umask=0022",
+      "session optional pam_umask.so umask=0002"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-modules"
+    ],
+    "fedora_rhel": [
+      "pam"
+    ],
+    "alpine": [
+      "pam"
+    ],
+    "arch": [
+      "pam"
+    ]
+  },
+  "configuration_files": [
+    "/etc/group (must contain 'developers' group)"
+  ],
+  "umask_configuration": {
+    "0022": {
+      "permissions": "rw-r--r-- for files, rwxr-xr-x for dirs",
+      "use_case": "Regular users (non-developers)"
+    },
+    "0002": {
+      "permissions": "rw-rw-r-- for files, rwxrwxr-x for dirs",
+      "use_case": "Developers group (collaborative)"
+    }
+  },
+  "group_setup": "groupadd developers",
+  "deployment_requirements": [
+    "Create 'developers' group",
+    "Add users to developers group: usermod -aG developers username",
+    "Configure PAM with pam_succeed_if and pam_umask"
+  ],
+  "management_tools": [
+    "add-user-to-developers.sh (add user to group)",
+    "check-current-umask.sh (check user umask)",
+    "verify-umask-policy.sh (verify configuration)"
+  ],
+  "bundle_source": "10-umask-by-group",
+  "notes": "Enables team collaboration without manual chmod. Different umask prevents permission issues when sharing files.",
+  "testing_steps": [
+    "1. Create developers group: groupadd developers",
+    "2. Add user to group: usermod -aG developers testuser",
+    "3. Non-developer user login: check-current-umask.sh (should show 0022)",
+    "4. Developer user login: check-current-umask.sh (should show 0002)",
+    "5. Create file and verify permissions match umask"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

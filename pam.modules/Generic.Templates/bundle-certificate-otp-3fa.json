@@ -1,0 +1,123 @@
+{
+  "id": "bundle-certificate-otp-3fa",
+  "bundle_name": "Certificate + OTP Three-Factor Authentication",
+  "version": "1.0.0",
+  "title": "Maximum Security Smart Card + OTP",
+  "description": "Three-factor authentication with smart card certificate + password + OTP for government and military systems",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": [
+    "login"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-certificate-otp-3fa",
+      "import": "../Element.Templates/template.certificate-otp-3fa.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-pkcs11",
+        "libpcsclite1",
+        "libopensc6",
+        "oathtool",
+        "libpam-oath"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam_pkcs11",
+        "pcsc-lite",
+        "opensc",
+        "oathtool",
+        "pam-oath"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "opensc",
+        "oath-toolkit"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "opensc",
+        "oath-toolkit"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam_pkcs11",
+        "pcsc-lite",
+        "opensc",
+        "oathtool",
+        "pam-oath"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "12-mfa-cert-otp.msh",
+  "deployment_requirements": [
+    "Complex PKI infrastructure (weeks/months to setup)",
+    "USB Smart Card Readers",
+    "Smart cards with X.509 certificates",
+    "Certificate Authority infrastructure",
+    "PCSC daemon (pcscd)",
+    "Trained IT staff"
+  ],
+  "management_tools": [
+    "test-smartcard.sh",
+    "cert-otp-enroll.sh"
+  ],
+  "configuration_files": [
+    "/etc/pam_pkcs11.conf",
+    "/etc/users.oath (permissions: 600)"
+  ],
+  "hardware_requirements": [
+    "USB Smart Card Reader",
+    "Smart cards with X.509 certificates",
+    "Private keys on cards (non-extractable)",
+    "Phone with authenticator app"
+  ],
+  "limitations": [
+    "Local authentication ONLY (not SSH remote)",
+    "Requires physical card reader",
+    "Complex infrastructure",
+    "High implementation cost",
+    "Ongoing certificate management"
+  ],
+  "testing_steps": [
+    "1. Setup PCSC daemon: systemctl start pcscd",
+    "2. Test smartcard: test-smartcard.sh",
+    "3. Enroll user: cert-otp-enroll.sh",
+    "4. Test with password + card + OTP"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

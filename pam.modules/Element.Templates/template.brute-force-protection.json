@@ -1,0 +1,90 @@
+{
+  "id": "element-brute-force-protection",
+  "name": "Brute Force Attack Prevention",
+  "description": "Lock accounts after failed authentication attempts to protect against brute force attacks",
+  "category": "security",
+  "security_level": "critical",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_faillock",
+      "interface": "auth",
+      "config": {
+        "deny": 5,
+        "fail_interval": 900,
+        "unlock_time": 1200
+      },
+      "control_flag_preauth": "required",
+      "control_flag_authfail": "[default=die]",
+      "control_flag_authsucc": "sufficient",
+      "ordering": "preauth=1, authfail=after_unix, authsucc=after_authfail",
+      "fragment_ref": "pam_faillock-lockout"
+    },
+    {
+      "module": "pam_unix",
+      "interface": "auth",
+      "config": {
+        "sha512": true,
+        "shadow": true
+      },
+      "control_flag": "required",
+      "ordering": 2,
+      "fragment_ref": "pam_unix-basic"
+    }
+  ],
+  "pam_configuration": {
+    "auth": [
+      "auth required pam_faillock.so preauth silent audit deny=5 unlock_time=1200",
+      "auth required pam_unix.so sha512 shadow try_first_pass",
+      "auth [default=die] pam_faillock.so authfail audit deny=5 unlock_time=1200",
+      "auth sufficient pam_faillock.so authsucc"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-modules"
+    ],
+    "fedora_rhel": [
+      "pam"
+    ],
+    "alpine": [
+      "pam"
+    ],
+    "arch": [
+      "pam"
+    ]
+  },
+  "configuration_files": [
+    "/var/run/faillock/ (failure database, auto-managed)",
+    "/etc/security/faillock.conf (optional configuration)"
+  ],
+  "faillock_parameters": {
+    "deny": 5,
+    "fail_interval": "900 seconds (15 minutes)",
+    "unlock_time": "1200 seconds (20 minutes)"
+  },
+  "deployment_requirements": [
+    "pam_faillock available on system",
+    "Proper PAM module ordering (preauth before unix, authfail after unix)",
+    "Sufficient disk space for failure tracking"
+  ],
+  "management_tools": [
+    "show-locked-accounts.sh (list locked users)",
+    "unlock-user.sh (manual unlock)",
+    "check-failed-attempts.sh (view failure details)"
+  ],
+  "bundle_source": "08-intruder-lockout",
+  "notes": "CRITICAL for security. Essential on any login interface. Typical: 5 failures in 15 minutes \u2192 20 minute lockout.",
+  "testing_steps": [
+    "1. Attempt 5 failed logins with wrong password",
+    "2. Account should be locked",
+    "3. Run show-locked-accounts.sh to confirm",
+    "4. Wait 20 minutes or run unlock-user.sh",
+    "5. Verify login works again"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

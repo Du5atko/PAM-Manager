@@ -1,0 +1,69 @@
+{
+  "id": "element-session-isolation",
+  "name": "Private Session Namespace Isolation",
+  "description": "Isolate /tmp and /var/tmp per user session with private mount namespaces",
+  "category": "session",
+  "security_level": "high",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_namespace",
+      "interface": "session",
+      "config": {
+        "conffile": "/etc/security/namespace.conf",
+        "debug": false
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_namespace-isolation"
+    }
+  ],
+  "pam_configuration": {
+    "session": [
+      "session required pam_namespace.so"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-namespaces"
+    ],
+    "fedora_rhel": [
+      "pam-namespaces"
+    ],
+    "alpine": [
+      "pam-namespace"
+    ],
+    "arch": [
+      "pam-namespace"
+    ]
+  },
+  "configuration_files": [
+    "/etc/security/namespace.conf (mount point definitions)"
+  ],
+  "namespace_conf_example": {
+    "/tmp": "/tmp/%U user 0755 root",
+    "/var/tmp": "/var/tmp/%U user 0755 root"
+  },
+  "deployment_requirements": [
+    "Linux kernel 3.8+ (namespace support)",
+    "Proper /etc/security/namespace.conf configuration",
+    "pam_namespace module"
+  ],
+  "management_tools": [
+    "check-namespace.sh (user verification)",
+    "verify-namespace-isolation.sh (admin verification)"
+  ],
+  "bundle_source": "05-private-namespace",
+  "notes": "Each user session gets isolated /tmp and /var/tmp. Prevents access to other users' temporary files.",
+  "testing_steps": [
+    "1. Verify namespace.conf is configured",
+    "2. User logs in and checks: ls -la /tmp",
+    "3. Run verification tool: verify-namespace-isolation.sh",
+    "4. Confirm each user has separate /tmp directory"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

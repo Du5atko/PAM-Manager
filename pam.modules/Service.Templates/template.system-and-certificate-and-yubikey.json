@@ -1,0 +1,7 @@
+{
+  "id": "mfa-by-added-fido",
+  "description": "MFA service for login, where user need to be verified by system (password/ssh key) and FIDO/U2F (Yubikey).",
+  "elements": [
+    "certificate-yubikey-3fa"
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "mfa-by-added-fido",
+  "description": "MFA service for login, where user need to be verified by system (password/ssh key), X.509 certificate and OTP (HOTP/TOTP).",
+  "elements": [
+    "certificate-otp-3fa"
+  ]
+}

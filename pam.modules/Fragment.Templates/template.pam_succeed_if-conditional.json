@@ -1,0 +1,44 @@
+{
+  "id": "pam_succeed_if-conditional",
+  "description": "Check user name or group membership and branch authentication accordingly. Useful for conditional authentication rules.",
+  "module": "pam_succeed_if",
+  "interface": "auth,account",
+  "parameters": {
+    "user": "Check specific username",
+    "notingroup": "Check user is NOT in group",
+    "quiet": "Don't print messages"
+  },
+  "parameter_help": {
+    "user": "Branch based on username (e.g., user = rescue for emergency account)",
+    "notingroup": "Check if user is NOT member of group (e.g., notingroup developers)",
+    "quiet": "Suppress informational messages"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "conditional",
+    "user-check",
+    "group-check",
+    "flow-control"
+  ],
+  "bundle_source": [
+    "03-yubikey-rescue",
+    "10-umask-by-group"
+  ],
+  "pam_stack_examples": [
+    "auth [success=1 default=ignore] pam_succeed_if.so user = rescue service = login",
+    "auth [success=1 default=ignore] pam_succeed_if.so quiet user notingroup developers"
+  ],
+  "security_level": "medium",
+  "control_flags": {
+    "success=1": "Skip next module on success",
+    "default=ignore": "Otherwise treat result as pam_ignore"
+  },
+  "notes": "Used for branching authentication flow. Common use cases: emergency accounts, group-based rules, service-specific authentication.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

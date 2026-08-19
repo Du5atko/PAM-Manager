@@ -1,0 +1,80 @@
+{
+  "id": "element-yubikey-central-mfa",
+  "name": "YubiKey Central MFA",
+  "description": "Centralized administrator-managed YubiKey FIDO/U2F registration with system password",
+  "category": "authentication",
+  "security_level": "high",
+  "pam_services": [
+    "login",
+    "sshd",
+    "sudo"
+  ],
+  "fragments": [
+    {
+      "module": "pam_unix",
+      "interface": "auth",
+      "config": {
+        "sha512": true,
+        "shadow": true,
+        "try_first_pass": true
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_unix-basic"
+    },
+    {
+      "module": "pam_u2f",
+      "interface": "auth",
+      "config": {
+        "authfile": "/etc/u2f_mappings"
+      },
+      "control_flag": "required",
+      "ordering": 2,
+      "fragment_ref": "pam_u2f-yubikey"
+    }
+  ],
+  "pam_configuration": {
+    "auth": [
+      "auth required pam_unix.so sha512 shadow try_first_pass",
+      "auth required pam_u2f.so authfile=/etc/u2f_mappings"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-u2f",
+      "pamu2fcfg"
+    ],
+    "fedora_rhel": [
+      "pam-u2f",
+      "pamu2fcfg"
+    ],
+    "alpine": [
+      "pam-u2f"
+    ],
+    "arch": [
+      "pam-u2f"
+    ]
+  },
+  "configuration_files": [
+    "/etc/u2f_mappings (permissions: 600)"
+  ],
+  "deployment_requirements": [
+    "YubiKey devices for enrolled users",
+    "Administrator access for enrollment",
+    "Central key mapping file"
+  ],
+  "management_tools": [
+    "yubikey-central-register-user.sh (admin enrollment)",
+    "yubikey-list-registered.sh (list users)",
+    "yubikey-backup-mappings.sh (backup keys)"
+  ],
+  "bundle_source": "02-yubikey-central",
+  "notes": "Administrator manages all YubiKey mappings in /etc/u2f_mappings. Easier key rotation and management.",
+  "testing_steps": [
+    "1. Admin registers user: yubikey-central-register-user.sh username",
+    "2. User tests login with password + YubiKey touch",
+    "3. Verify /etc/u2f_mappings contains user entry"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

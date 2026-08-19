@@ -1,0 +1,259 @@
+{
+  "Fragments": [
+    {
+      "filename": "template.Minimum password lenght.json",
+      "name": "Minimum password lenght",
+      "description": "Template for minimum password lenght equal to 128b security equivalent. Require at the least 1 lowercase, 1 uppercase, 1 number and 1 special character, overall lenght 24 characters, in case of change at the least 1/3 must differ."
+    },
+    {
+      "filename": "template.pam_deny-denial.json",
+      "name": "pam_deny-denial",
+      "description": "Always denies access. Used as safety net after pam_succeed_if to ensure no accidental fallthrough."
+    },
+    {
+      "filename": "template.pam_env-variables.json",
+      "name": "pam_env-variables",
+      "description": "Set environment variables based on service or login context. Enables conditional behavior based on login origin (local vs remote)."
+    },
+    {
+      "filename": "template.pam_exec-command.json",
+      "name": "pam_exec-command",
+      "description": "Execute external command or script during PAM processing. Flexible module for custom authentication/session logic."
+    },
+    {
+      "filename": "template.pam_faillock-lockout.json",
+      "name": "pam_faillock-lockout",
+      "description": "Lock account after N failed authentication attempts. Protects against brute force attacks with configurable lockout duration."
+    },
+    {
+      "filename": "template.pam_limits-resource.json",
+      "name": "pam_limits-resource",
+      "description": "Limit system resources per user: concurrent logins, processes, open files, memory. Prevents fork bombs and resource exhaustion attacks."
+    },
+    {
+      "filename": "template.pam_motd-display.json",
+      "name": "pam_motd-display",
+      "description": "Display system Message of the Day to users at login. Standard PAM session module for informing users."
+    },
+    {
+      "filename": "template.pam_namespace-isolation.json",
+      "name": "pam_namespace-isolation",
+      "description": "Create isolated mount namespace for each user session. Each user gets private /tmp and /var/tmp preventing access to other users' files."
+    },
+    {
+      "filename": "template.pam_oath-otp.json",
+      "name": "pam_oath-otp",
+      "description": "Two-factor authentication using OTP (One-Time Password) or HOTP (HMAC-based). Users authenticate with password + 6-digit code from authenticator app. Supporting Android applications like Google Authenticator, Microsoft Authenticator, Aegis or Android Authenticator."
+    },
+    {
+      "filename": "template.pam_pkcs11-smartcard.json",
+      "name": "pam_pkcs11-smartcard",
+      "description": "PKCS#11 based smart card authentication using X.509 certificates. Highest security factor for local console authentication."
+    },
+    {
+      "filename": "template.pam_succeed_if-conditional.json",
+      "name": "pam_succeed_if-conditional",
+      "description": "Check user name or group membership and branch authentication accordingly. Useful for conditional authentication rules."
+    },
+    {
+      "filename": "template.pam_time-access.json",
+      "name": "pam_time-access",
+      "description": "Restrict user logins to specific days and time windows. Useful for enforcing business hours, contractor access, shift-based access."
+    },
+    {
+      "filename": "template.pam_u2f-yubikey.json",
+      "name": "pam_u2f-yubikey",
+      "description": "FIDO/U2F authentication using YubiKey hardware security key. Provides strong second factor for MFA. Supporting for OTP codes use of Android applications like Google Authenticator, Microsoft Authenticator, Aegis or Android Authenticator with authentication codes (6-8 digits)."
+    },
+    {
+      "filename": "template.pam_umask-permissions.json",
+      "name": "pam_umask-permissions",
+      "description": "Set file creation permissions (umask) based on user group membership. Enables collaborative file permissions for specific teams."
+    },
+    {
+      "filename": "template.pam_unix-basic.json",
+      "name": "pam_unix-basic",
+      "description": "Basic Unix authentication using /etc/passwd, /etc/shadow and /etc/group. Foundation for most PAM configurations."
+    }
+  ],
+  "Elements": [
+    {
+      "filename": "template.access-time-control.json",
+      "name": "access-time-control",
+      "description": "Restrict user logins to specific days and time windows for business hours or shift-based access"
+    },
+    {
+      "filename": "template.brute-force-protection.json",
+      "name": "brute-force-protection",
+      "description": "Lock accounts after failed authentication attempts to protect against brute force attacks"
+    },
+    {
+      "filename": "template.certificate-otp-3fa.json",
+      "name": "certificate-otp-3fa",
+      "description": "Maximum security with smart card certificate + password + OTP for government/military systems"
+    },
+    {
+      "filename": "template.certificate-yubikey-3fa.json",
+      "name": "certificate-yubikey-3fa",
+      "description": "Maximum security with smart card certificate + password + FIDO/U2F for government/military systems"
+    },
+    {
+      "filename": "template.certificate-yubikey-central-3fa.json",
+      "name": "certificate-yubikey-central-3fa",
+      "description": "Maximum security with smart card certificate + password + OTP for government/military systems"
+    },
+    {
+      "filename": "template.environment-configuration.json",
+      "name": "environment-configuration",
+      "description": "Set environment variables based on login origin (local vs remote) for conditional behavior"
+    },
+    {
+      "filename": "template.group-based-permissions.json",
+      "name": "group-based-permissions",
+      "description": "Set different file creation permissions (umask) based on group membership for team collaboration"
+    },
+    {
+      "filename": "template.otp-mfa.json",
+      "name": "otp-mfa",
+      "description": "Two-factor authentication using mobile authenticator apps (Google Authenticator, Microsoft Authenticator, etc.)"
+    },
+    {
+      "filename": "template.resource-limits.json",
+      "name": "resource-limits",
+      "description": "Limit concurrent logins, processes, and system resources per user to prevent fork bombs and DoS attacks"
+    },
+    {
+      "filename": "template.session-isolation.json",
+      "name": "session-isolation",
+      "description": "Isolate /tmp and /var/tmp per user session with private mount namespaces"
+    },
+    {
+      "filename": "template.user-messaging.json",
+      "name": "user-messaging",
+      "description": "Display system MOTD followed by per-user personal messages at login"
+    },
+    {
+      "filename": "template.yubikey-basic-mfa.json",
+      "name": "yubikey-basic-mfa",
+      "description": "Per-user YubiKey FIDO/U2F Multi-Factor Authentication with system password"
+    },
+    {
+      "filename": "template.yubikey-central-mfa.json",
+      "name": "yubikey-central-mfa",
+      "description": "Centralized administrator-managed YubiKey FIDO/U2F registration with system password"
+    },
+    {
+      "filename": "template.yubikey-emergency-rescue.json",
+      "name": "yubikey-emergency-rescue",
+      "description": "Critical security recovery account with specific YubiKey access restricted to local console"
+    }
+  ],
+  "Services": [
+    {
+      "filename": "template.recovery-console.json",
+      "name": "recovery-console",
+      "description": "Recovery console, where user need to use physical terminal and specific FIDO/U2F token. After succesfull login, credential righst could be elevated by appropriate settings of sudo."
+    },
+    {
+      "filename": "template.system-and-certificate-and-otp.json",
+      "name": "system-and-certificate-and-otp",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key), X.509 certificate and OTP (HOTP/TOTP)."
+    },
+    {
+      "filename": "template.system-and-certificate-and-yubikey.json",
+      "name": "system-and-certificate-and-yubikey",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key) and FIDO/U2F (Yubikey)."
+    },
+    {
+      "filename": "template.system-and-otp.json",
+      "name": "system-and-otp",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key) and OTP (HOTP/TOTP)."
+    },
+    {
+      "filename": "template.system-and-yubikey.json",
+      "name": "system-and-yubikey",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key) and FIDO/U2F (Yubikey)."
+    }
+  ],
+  "Bundles": [
+    {
+      "filename": "bundle-access-time-control.json",
+      "name": "access-time-control",
+      "description": "Restrict user logins to specific days and time windows for business hours or shift-based access",
+      "bundle_name": "Time-Based Access Control"
+    },
+    {
+      "filename": "bundle-brute-force-protection.json",
+      "name": "brute-force-protection",
+      "description": "Lock accounts after failed authentication attempts to protect against brute force attacks",
+      "bundle_name": "Brute Force Protection"
+    },
+    {
+      "filename": "bundle-certificate-otp-3fa.json",
+      "name": "certificate-otp-3fa",
+      "description": "Three-factor authentication with smart card certificate + password + OTP for government and military systems",
+      "bundle_name": "Certificate + OTP Three-Factor Authentication"
+    },
+    {
+      "filename": "bundle-environment-config.json",
+      "name": "environment-config",
+      "description": "Set environment variables based on login origin for conditional shell behavior",
+      "bundle_name": "Environment Configuration"
+    },
+    {
+      "filename": "bundle-group-permissions.json",
+      "name": "group-permissions",
+      "description": "Set different file creation permissions (umask) based on group membership for team collaboration",
+      "bundle_name": "Group-Based Permissions"
+    },
+    {
+      "filename": "bundle-otp-mfa.json",
+      "name": "otp-mfa",
+      "description": "Two-factor authentication using mobile authenticator apps (Google Authenticator, Microsoft Authenticator, etc.)",
+      "bundle_name": "OTP/HOTP Two-Factor Authentication"
+    },
+    {
+      "filename": "bundle-resource-limits.json",
+      "name": "resource-limits",
+      "description": "Limit concurrent logins, processes, and system resources per user to prevent fork bombs",
+      "bundle_name": "Resource and Session Limits"
+    },
+    {
+      "filename": "bundle-session-isolation.json",
+      "name": "session-isolation",
+      "description": "Isolate /tmp and /var/tmp per user session with private mount namespaces",
+      "bundle_name": "Session Isolation"
+    },
+    {
+      "filename": "bundle-user-messaging.json",
+      "name": "user-messaging",
+      "description": "Display system MOTD followed by per-user personal messages at login",
+      "bundle_name": "User Messaging and MOTD"
+    },
+    {
+      "filename": "bundle-yubikey-basic-auth.json",
+      "name": "yubikey-basic-auth",
+      "description": "Basic YubiKey authentication with each user managing their own key registration",
+      "bundle_name": "YubiKey Basic MFA"
+    },
+    {
+      "filename": "bundle-yubikey-central-auth.json",
+      "name": "yubikey-central-auth",
+      "description": "Centralized administrator-managed YubiKey registration for easier key management and rotation",
+      "bundle_name": "YubiKey Central MFA"
+    },
+    {
+      "filename": "bundle-yubikey-emergency.json",
+      "name": "yubikey-emergency",
+      "description": "Emergency recovery account for system recovery with YubiKey access restricted to local console",
+      "bundle_name": "YubiKey Emergency Recovery"
+    }
+  ],
+  "Generic": [
+    {
+      "filename": "yubikey-basic-auth.json",
+      "name": "yubikey-basic-auth",
+      "description": ""
+    }
+  ]
+}

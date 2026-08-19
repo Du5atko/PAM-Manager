@@ -1,0 +1,81 @@
+{
+  "id": "pam_oath-otp",
+  "description": "Two-factor authentication using OTP (One-Time Password) or HOTP (HMAC-based). Users authenticate with password + 6-digit code from authenticator app. Supporting Android applications like Google Authenticator, Microsoft Authenticator, Aegis or Android Authenticator.",
+  "module": "pam_oath",
+  "interface": "auth",
+  "parameters": {
+    "usersfile": "Path to users.oath file containing OTP secrets",
+    "window": "Time window tolerance for TOTP (default: 2)"
+  },
+  "parameter_help": {
+    "usersfile": "File with OTP secrets. Format: HOTP/TOTP username - SECRETKEY",
+    "window": "Number of time windows to accept (for clock drift). window=10 allows \u00b110 time periods."
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-oath, oathtool",
+    "fedora_rhel": "pam-oath, oathtool",
+    "alpine": "oath-toolkit",
+    "arch": "oath-toolkit"
+  },
+  "tags": [
+    "authentication",
+    "mfa",
+    "otp",
+    "hotp",
+    "totp",
+    "two-factor"
+  ],
+  "bundle_source": [
+    "11-mfa-otp-hotp",
+    "12-mfa-cert-otp"
+  ],
+  "pam_stack_examples": [
+    "auth required pam_unix.so",
+    "auth required pam_oath.so usersfile=/etc/users.oath window=10"
+  ],
+  "security_level": "critical",
+  "supported_algorithms": {
+    "HOTP": "HMAC-based OTP (counter-based, no clock needed)",
+    "TOTP": "Time-based OTP (30-second time windows)"
+  },
+  "compatible_apps": [
+    "Google Authenticator",
+    "Microsoft Authenticator",
+    "Aegis Authenticator",
+    "FreeOTP",
+    "Authy",
+    "LastPass Authenticator",
+    "Any OATH-compatible application"
+  ],
+  "users_oath_format": {
+    "syntax": "ALGORITHM username - SECRET",
+    "example": "HOTP alice - HXDP5JQVJVGVYQKQ",
+    "permissions": "600 (root:root)",
+    "location": "/etc/users.oath"
+  },
+  "enrollment_workflow": [
+    "1. Administrator generates OTP secret: secret=$(head -c 20 /dev/urandom | base32)",
+    "2. Add to users.oath: echo 'HOTP username - SECRET' >> /etc/users.oath",
+    "3. User scans QR code with phone",
+    "4. Test with: oathtool --totp SECRET (enters 6-digit code)",
+    "5. User logs in with password + 6-digit code"
+  ],
+  "secret_generation": "Use: head -c 20 /dev/urandom | base32 (generates 32-character base32 secret)",
+  "verification_command": "oathtool --totp SECRET (shows current 6-digit code)",
+  "benefits": [
+    "Works with any phone/authenticator app",
+    "No hardware required",
+    "Can authenticate from anywhere (phone has app)",
+    "Scalable to 1000s of users",
+    "No monthly SaaS fees"
+  ],
+  "limitations": [
+    "User must have phone with app",
+    "Code valid for 30 seconds (for TOTP)",
+    "Requires exact time sync"
+  ],
+  "recovery": "Backup codes: generate during enrollment for emergency access",
+  "notes": "Perfect for enterprise 2FA. Simple to manage. Most users familiar with authenticator apps.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

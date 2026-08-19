@@ -1,0 +1,100 @@
+{
+  "id": "bundle-yubikey-basic-auth",
+  "bundle_name": "YubiKey Basic MFA",
+  "version": "1.0.0",
+  "title": "Per-User YubiKey FIDO/U2F MFA",
+  "description": "Basic YubiKey authentication with each user managing their own key registration",
+  "category": "authentication",
+  "security_level": "high",
+  "pam_services": [
+    "login",
+    "sshd",
+    "sudo"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-yubikey-basic-mfa",
+      "import": "../Element.Templates/template.yubikey-basic-mfa.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-u2f",
+        "pamu2fcfg"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam-u2f",
+        "pamu2fcfg"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam-u2f"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam-u2f"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam-u2f",
+        "pamu2fcfg"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "01-yubikey-basic.msh",
+  "deployment_requirements": [
+    "YubiKey device for each user",
+    "pamu2fcfg enrollment tool",
+    "User self-registration workflow"
+  ],
+  "management_tools": [
+    "yubikey-u2f-init.sh"
+  ],
+  "configuration_files": [
+    "~/.config/Yubico/u2f_keys (per-user)"
+  ],
+  "testing_steps": [
+    "1. User enrollment: pamu2fcfg",
+    "2. Test login with password + YubiKey touch",
+    "3. Verify ~/.config/Yubico/u2f_keys exists"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

@@ -1,0 +1,34 @@
+{
+  "id": "pam_deny-denial",
+  "description": "Always denies access. Used as safety net after pam_succeed_if to ensure no accidental fallthrough.",
+  "module": "pam_deny",
+  "interface": "auth,account",
+  "parameters": {},
+  "parameter_help": {},
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "denial",
+    "security",
+    "flow-control",
+    "safety"
+  ],
+  "bundle_source": [
+    "03-yubikey-rescue"
+  ],
+  "pam_stack_examples": [
+    "auth [success=1 default=ignore] pam_succeed_if.so user = rescue service = login",
+    "auth requisite pam_deny.so (deny if not rescue user)"
+  ],
+  "security_level": "high",
+  "control_flags": {
+    "requisite": "Fail immediately and don't call further modules"
+  },
+  "notes": "Simple module with no parameters. Always fails. Used as emergency stop in authentication flow. When used with pam_succeed_if, creates exclusive access rules.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

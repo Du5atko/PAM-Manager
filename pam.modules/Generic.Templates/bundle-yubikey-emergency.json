@@ -1,0 +1,97 @@
+{
+  "id": "bundle-yubikey-emergency",
+  "bundle_name": "YubiKey Emergency Recovery",
+  "version": "1.0.0",
+  "title": "Emergency Rescue Account with YubiKey",
+  "description": "Emergency recovery account for system recovery with YubiKey access restricted to local console",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": [
+    "login"
+  ],
+  "type": "Bundle",
+  "services": [
+    {
+      "id": "element-yubikey-emergency-rescue",
+      "import": "../Service.Templates/template.recovery-console.json",
+      "required": true
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-u2f",
+        "pamu2fcfg",
+        "sudo"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam-u2f",
+        "pamu2fcfg",
+        "sudo"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam-u2f",
+        "sudo"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam-u2f",
+        "sudo"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam-u2f",
+        "pamu2fcfg",
+        "sudo"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "03-yubikey-rescue.msh",
+  "deployment_requirements": [
+    "Specific YubiKey for emergency access",
+    "Backup YubiKey stored securely",
+    "Physical console access only"
+  ],
+  "management_tools": [
+    "setup-rescue-yubikey.sh"
+  ],
+  "configuration_files": [
+    "/etc/security/rescue_u2f (permissions: 600)"
+  ],
+  "special_account": {
+    "username": "rescue",
+    "shell": "/bin/bash",
+    "sudo_access": true
+  },
+  "testing_steps": [
+    "1. Setup: setup-rescue-yubikey.sh",
+    "2. Test console login with YubiKey",
+    "3. Verify sudo access",
+    "4. Store backup YubiKey"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

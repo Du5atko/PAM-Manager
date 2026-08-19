@@ -1,0 +1,63 @@
+{
+  "id": "pam_limits-resource",
+  "description": "Limit system resources per user: concurrent logins, processes, open files, memory. Prevents fork bombs and resource exhaustion attacks.",
+  "module": "pam_limits",
+  "interface": "session",
+  "parameters": {
+    "conffile": "Path to limits.conf file (default: /etc/security/limits.conf)"
+  },
+  "parameter_help": {
+    "conffile": "Configuration file defining per-user resource limits"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "resource-control",
+    "dos-prevention",
+    "limits",
+    "concurrent-sessions"
+  ],
+  "bundle_source": [
+    "07-concurrent-login-limits"
+  ],
+  "pam_stack_examples": [
+    "session required pam_limits.so"
+  ],
+  "security_level": "medium",
+  "configuration_format": {
+    "file": "/etc/security/limits.conf",
+    "syntax": "domain type item value"
+  },
+  "configuration_examples": [
+    "* hard maxlogins 2 (max 2 concurrent logins per user)",
+    "* hard nproc 2000 (max 2000 processes per user)",
+    "* hard nofile 4096 (max 4096 open files)",
+    "* hard memlock 65536 (max 64MB locked memory)",
+    "@developers soft nproc 4000 (developers can use up to 4000 processes)"
+  ],
+  "limit_types": {
+    "maxlogins": "Maximum concurrent login sessions",
+    "nproc": "Maximum processes/threads",
+    "nofile": "Maximum open file descriptors",
+    "memlock": "Maximum locked memory (bytes)",
+    "msgqueue": "Maximum message queue size",
+    "locks": "Maximum file locks"
+  },
+  "soft_vs_hard": {
+    "soft": "User can increase up to hard limit",
+    "hard": "Absolute maximum, user cannot exceed"
+  },
+  "benefits": [
+    "Prevents fork bombs",
+    "Protects against DoS attacks",
+    "Ensures fair resource allocation",
+    "Minimum performance impact"
+  ],
+  "notes": "Essential for multi-user systems. Common issue: default limits too high for security, too low for applications.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

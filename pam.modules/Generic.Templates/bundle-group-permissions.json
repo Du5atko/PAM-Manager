@@ -1,0 +1,98 @@
+{
+  "id": "bundle-group-permissions",
+  "bundle_name": "Group-Based Permissions",
+  "version": "1.0.0",
+  "title": "File Permissions by Group",
+  "description": "Set different file creation permissions (umask) based on group membership for team collaboration",
+  "category": "session",
+  "security_level": "medium",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-group-based-permissions",
+      "import": "../Element.Templates/template.group-based-permissions.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-modules"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "10-umask-by-group.msh",
+  "deployment_requirements": [
+    "Create 'developers' group",
+    "Add users to group: usermod -aG developers username"
+  ],
+  "management_tools": [
+    "add-user-to-developers.sh",
+    "check-current-umask.sh",
+    "verify-umask-policy.sh"
+  ],
+  "configuration_files": [
+    "/etc/group (must contain 'developers')"
+  ],
+  "testing_steps": [
+    "1. Create developers group",
+    "2. Add users to group",
+    "3. Test umask for regular user (0022)",
+    "4. Test umask for developer (0002)"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

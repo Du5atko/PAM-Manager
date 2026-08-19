@@ -1,0 +1,102 @@
+{
+  "id": "element-yubikey-emergency-rescue",
+  "name": "Emergency Rescue Account with YubiKey",
+  "description": "Critical security recovery account with specific YubiKey access restricted to local console",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": [
+    "login"
+  ],
+  "fragments": [
+    {
+      "module": "pam_succeed_if",
+      "interface": "auth",
+      "config": {
+        "user": "rescue",
+        "service": "login"
+      },
+      "control_flag": "[success=1 default=ignore]",
+      "ordering": 1,
+      "fragment_ref": "pam_succeed_if-conditional"
+    },
+    {
+      "module": "pam_deny",
+      "interface": "auth",
+      "config": {},
+      "control_flag": "requisite",
+      "ordering": 2,
+      "fragment_ref": "pam_deny-denial"
+    },
+    {
+      "module": "pam_u2f",
+      "interface": "auth",
+      "config": {
+        "authfile": "/etc/security/rescue_u2f"
+      },
+      "control_flag": "required",
+      "ordering": 3,
+      "fragment_ref": "pam_u2f-yubikey"
+    }
+  ],
+  "pam_configuration": {
+    "auth": [
+      "auth [success=1 default=ignore] pam_succeed_if.so user = rescue service = login",
+      "auth requisite pam_deny.so",
+      "auth required pam_u2f.so authfile=/etc/security/rescue_u2f"
+    ],
+    "account": [
+      "account required pam_permit.so"
+    ],
+    "session": [
+      "session required pam_permit.so"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-u2f",
+      "pamu2fcfg",
+      "sudo"
+    ],
+    "fedora_rhel": [
+      "pam-u2f",
+      "pamu2fcfg",
+      "sudo"
+    ],
+    "alpine": [
+      "pam-u2f",
+      "sudo"
+    ],
+    "arch": [
+      "pam-u2f",
+      "sudo"
+    ]
+  },
+  "configuration_files": [
+    "/etc/security/rescue_u2f (permissions: 600)"
+  ],
+  "deployment_requirements": [
+    "Specific YubiKey for emergency access",
+    "Backup YubiKey stored securely",
+    "Local console access only",
+    "Sudo access configured"
+  ],
+  "special_account": {
+    "username": "rescue",
+    "shell": "/bin/bash",
+    "home": "/home/rescue",
+    "sudo_access": "All commands without password"
+  },
+  "management_tools": [
+    "setup-rescue-yubikey.sh (emergency account setup)"
+  ],
+  "bundle_source": "03-yubikey-rescue",
+  "notes": "CRITICAL: Emergency use only. Should be physically protected. Requires local console access.",
+  "testing_steps": [
+    "1. Setup rescue account: setup-rescue-yubikey.sh",
+    "2. Test login with YubiKey from console",
+    "3. Verify sudo access works",
+    "4. Store backup YubiKey securely"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

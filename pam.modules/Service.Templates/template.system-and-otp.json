@@ -1,0 +1,7 @@
+{
+  "id": "mfa-by-added-otp",
+  "description": "MFA service for login, where user need to be verified by system (password/ssh key) and OTP (HOTP/TOTP).",
+  "elements": [
+    "otp-mfa"
+  ]
+}

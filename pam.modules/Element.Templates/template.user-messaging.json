@@ -1,0 +1,63 @@
+{
+  "id": "element-user-messaging",
+  "name": "User-Specific Message Display",
+  "description": "Display system MOTD followed by per-user personal messages at login",
+  "category": "session",
+  "security_level": "low",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_motd",
+      "interface": "session",
+      "config": {},
+      "control_flag": "optional",
+      "ordering": 1,
+      "fragment_ref": "pam_motd-display"
+    },
+    {
+      "module": "pam_exec",
+      "interface": "session",
+      "config": {
+        "command": "/usr/local/sbin/pam-user-motd.sh"
+      },
+      "control_flag": "optional",
+      "ordering": 2,
+      "fragment_ref": "pam_exec-command"
+    }
+  ],
+  "pam_configuration": {
+    "session": [
+      "session optional pam_motd.so",
+      "session optional pam_exec.so /usr/local/sbin/pam-user-motd.sh"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [],
+    "fedora_rhel": [],
+    "alpine": [],
+    "arch": []
+  },
+  "configuration_files": [
+    "/etc/motd (system message)",
+    "~/.motd (user personal message)"
+  ],
+  "deployment_requirements": [
+    "No additional packages needed",
+    "Standard PAM modules"
+  ],
+  "management_tools": [
+    "setup-user-motd.sh (user MOTD editor)"
+  ],
+  "bundle_source": "04-motd-userspecific",
+  "notes": "System MOTD shown first, then user-specific ~/.motd if it exists. Useful for status messages and reminders.",
+  "testing_steps": [
+    "1. Create test MOTD: echo 'Important message' > /etc/motd",
+    "2. User creates personal message: setup-user-motd.sh",
+    "3. Login and verify both messages appear"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

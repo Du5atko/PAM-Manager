@@ -1,0 +1,40 @@
+{
+  "id": "pam_unix-basic",
+  "description": "Basic Unix authentication using /etc/passwd, /etc/shadow and /etc/group. Foundation for most PAM configurations.",
+  "module": "pam_unix",
+  "interface": "auth",
+  "parameters": {
+    "sha512": "Use SHA512 encryption",
+    "shadow": "Use shadow file for passwords",
+    "try_first_pass": "Try password from previous module"
+  },
+  "parameter_help": {
+    "sha512": "Enables SHA512 password encryption for strong security",
+    "shadow": "Reads passwords from /etc/shadow instead of /etc/passwd",
+    "try_first_pass": "Attempts to use cached password from previous module"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "authentication",
+    "password",
+    "foundation",
+    "basic"
+  ],
+  "bundle_source": [
+    "01-yubikey-basic",
+    "02-yubikey-central",
+    "08-intruder-lockout",
+    "11-mfa-otp-hotp",
+    "12-mfa-cert-otp"
+  ],
+  "pam_stack_example": "auth required pam_unix.so sha512 shadow try_first_pass",
+  "security_level": "high",
+  "notes": "Standard module, typically first in auth stack. Provides basic password authentication.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

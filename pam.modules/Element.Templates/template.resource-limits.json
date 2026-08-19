@@ -1,0 +1,79 @@
+{
+  "id": "element-resource-limits",
+  "name": "Resource and Concurrent Session Limits",
+  "description": "Limit concurrent logins, processes, and system resources per user to prevent fork bombs and DoS attacks",
+  "category": "resource_control",
+  "security_level": "medium",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "fragments": [
+    {
+      "module": "pam_limits",
+      "interface": "session",
+      "config": {
+        "conffile": "/etc/security/limits.conf"
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_limits-resource"
+    }
+  ],
+  "pam_configuration": {
+    "session": [
+      "session required pam_limits.so"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-modules"
+    ],
+    "fedora_rhel": [
+      "pam"
+    ],
+    "alpine": [
+      "pam"
+    ],
+    "arch": [
+      "pam"
+    ]
+  },
+  "configuration_files": [
+    "/etc/security/limits.conf (resource limit rules)"
+  ],
+  "limits_conf_format": "domain type item value",
+  "limits_conf_examples": [
+    "* hard maxlogins 2 (max 2 concurrent logins per user)",
+    "* hard nproc 2000 (max 2000 processes per user)",
+    "* hard nofile 4096 (max 4096 open files)",
+    "* hard memlock 65536 (max 64MB locked memory)",
+    "@developers soft nproc 4000 (developers can use up to 4000 processes)"
+  ],
+  "limit_types": {
+    "maxlogins": "Maximum concurrent login sessions",
+    "nproc": "Maximum processes/threads",
+    "nofile": "Maximum open file descriptors",
+    "memlock": "Maximum locked memory (bytes)"
+  },
+  "deployment_requirements": [
+    "Configure /etc/security/limits.conf",
+    "Test resource limits with actual usage patterns",
+    "Monitor for issues with applications"
+  ],
+  "management_tools": [
+    "show-current-limits.sh (display all limits)",
+    "check-active-logins.sh (count current logins)",
+    "check-resource-usage.sh (monitor resource usage)"
+  ],
+  "bundle_source": "07-concurrent-login-limits",
+  "notes": "Essential for multi-user systems. Default limits often too high for security. Typical: 2 logins, 1000-2000 processes per user.",
+  "testing_steps": [
+    "1. Configure limits.conf with test settings",
+    "2. User logs in from multiple terminals (test maxlogins)",
+    "3. Run resource-intensive command (test nproc)",
+    "4. Monitor with check-resource-usage.sh"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

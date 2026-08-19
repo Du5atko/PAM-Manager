@@ -1,0 +1,48 @@
+{
+  "id": "pam_u2f-yubikey",
+  "description": "FIDO/U2F authentication using YubiKey hardware security key. Provides strong second factor for MFA. Supporting for OTP codes use of Android applications like Google Authenticator, Microsoft Authenticator, Aegis or Android Authenticator with authentication codes (6-8 digits).",
+  "module": "pam_u2f",
+  "interface": "auth",
+  "parameters": {
+    "authfile": "Location of U2F key mappings (default: ~/.config/Yubico/u2f_keys)",
+    "nouserok": "Continue auth if user has no U2F key",
+    "openasuser": "Open user's own key file"
+  },
+  "parameter_help": {
+    "authfile": "Path to file containing user->key mappings. Can be per-user (~/.config/Yubico/u2f_keys) or central (/etc/u2f_mappings)",
+    "nouserok": "Allows users without U2F keys to still authenticate (graceful degradation)",
+    "openasuser": "Allows reading user-specific key files with proper permissions"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-u2f, pamu2fcfg",
+    "fedora_rhel": "pam-u2f, pamu2fcfg",
+    "alpine": "pam-u2f",
+    "arch": "pam-u2f"
+  },
+  "tags": [
+    "authentication",
+    "mfa",
+    "yubikey",
+    "fido",
+    "u2f",
+    "hardware"
+  ],
+  "bundle_source": [
+    "01-yubikey-basic",
+    "02-yubikey-central",
+    "03-yubikey-rescue"
+  ],
+  "pam_stack_examples": [
+    "auth required pam_unix.so",
+    "auth required pam_u2f.so (per-user keys, basic setup)",
+    "auth required pam_u2f.so authfile=/etc/u2f_mappings (central management)",
+    "auth [success=1 default=ignore] pam_succeed_if.so user = rescue",
+    "auth requisite pam_deny.so",
+    "auth required pam_u2f.so authfile=/etc/security/rescue_u2f (emergency account)"
+  ],
+  "security_level": "high",
+  "hardware_requirement": "YubiKey 5 Series or compatible FIDO/U2F device",
+  "notes": "Strong second factor authentication. Requires user to have YubiKey registered. Different deployment models: per-user (01) vs central (02) vs emergency (03).",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

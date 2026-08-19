@@ -1,0 +1,109 @@
+{
+  "id": "bundle-otp-mfa",
+  "bundle_name": "OTP/HOTP Two-Factor Authentication",
+  "version": "1.0.0",
+  "title": "Mobile Authenticator MFA",
+  "description": "Two-factor authentication using mobile authenticator apps (Google Authenticator, Microsoft Authenticator, etc.)",
+  "category": "authentication",
+  "security_level": "critical",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-otp-mfa",
+      "import": "../Element.Templates/template.otp-mfa.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-oath",
+        "oathtool"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam-oath",
+        "oathtool"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "oath-toolkit"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "oath-toolkit"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam-oath",
+        "oathtool"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "11-mfa-otp-hotp.msh",
+  "deployment_requirements": [
+    "oath-toolkit package installed",
+    "oathtool command available",
+    "/etc/users.oath properly configured",
+    "Users have authenticator app on phone"
+  ],
+  "management_tools": [
+    "otp-user-enroll.sh",
+    "otp-verify-enrollment.sh",
+    "otp-list-enrolled.sh"
+  ],
+  "configuration_files": [
+    "/etc/users.oath (permissions: 600)"
+  ],
+  "supported_apps": [
+    "Google Authenticator",
+    "Microsoft Authenticator",
+    "Aegis Authenticator",
+    "FreeOTP",
+    "Authy"
+  ],
+  "testing_steps": [
+    "1. Enroll user: otp-user-enroll.sh username",
+    "2. User scans QR code with phone",
+    "3. Test login: password + 6-digit code"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

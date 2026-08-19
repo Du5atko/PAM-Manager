@@ -1,0 +1,65 @@
+{
+  "id": "pam_umask-permissions",
+  "description": "Set file creation permissions (umask) based on user group membership. Enables collaborative file permissions for specific teams.",
+  "module": "pam_umask",
+  "interface": "session",
+  "parameters": {
+    "umask": "File creation mask to set (octal format)",
+    "umask_min": "Minimum umask to enforce"
+  },
+  "parameter_help": {
+    "umask": "Octal umask value. 0022 = rw-r--r--, 0002 = rw-rw-r--",
+    "umask_min": "Minimum restrictive umask, don't allow less restrictive"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "session",
+    "permissions",
+    "file-creation",
+    "group-based"
+  ],
+  "bundle_source": [
+    "10-umask-by-group"
+  ],
+  "pam_stack_examples": [
+    "session [success=1 default=ignore] pam_succeed_if.so quiet user notingroup developers",
+    "session optional pam_umask.so umask=0022 (for non-developers)",
+    "session optional pam_umask.so umask=0002 (for developers)"
+  ],
+  "security_level": "medium",
+  "umask_values": {
+    "0022": {
+      "octal": "0022",
+      "permissions": "rw-r--r-- for files, rwxr-xr-x for dirs",
+      "use_case": "Restrictive, default for most users"
+    },
+    "0002": {
+      "octal": "0002",
+      "permissions": "rw-rw-r-- for files, rwxrwxr-x for dirs",
+      "use_case": "Collaborative, group can write"
+    },
+    "0027": {
+      "octal": "0027",
+      "permissions": "rw-r----- for files, rwxr-x--- for dirs",
+      "use_case": "Very restrictive, only user can access"
+    }
+  },
+  "combination_with_succeed_if": {
+    "purpose": "Different umask per group",
+    "flow": "1. Check if user is NOT in developers group. 2. If yes, set umask=0022. 3. Otherwise skip to next rule setting umask=0002."
+  },
+  "benefits": [
+    "Enables team collaboration",
+    "Prevents permission issues when sharing files",
+    "Automatic, no manual chmod needed",
+    "Per-user configuration possible"
+  ],
+  "notes": "Combine with pam_succeed_if for group-based rules. Default umask often too restrictive for team environments.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

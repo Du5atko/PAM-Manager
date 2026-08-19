@@ -1,0 +1,75 @@
+{
+  "id": "element-yubikey-basic-mfa",
+  "name": "YubiKey Basic MFA",
+  "description": "Per-user YubiKey FIDO/U2F Multi-Factor Authentication with system password",
+  "category": "authentication",
+  "security_level": "high",
+  "pam_services": [
+    "login",
+    "sshd",
+    "sudo"
+  ],
+  "fragments": [
+    {
+      "module": "pam_unix",
+      "interface": "auth",
+      "config": {
+        "sha512": true,
+        "shadow": true,
+        "try_first_pass": true
+      },
+      "control_flag": "required",
+      "ordering": 1,
+      "fragment_ref": "pam_unix-basic"
+    },
+    {
+      "module": "pam_u2f",
+      "interface": "auth",
+      "config": {
+        "openasuser": true
+      },
+      "control_flag": "required",
+      "ordering": 2,
+      "fragment_ref": "pam_u2f-yubikey"
+    }
+  ],
+  "pam_configuration": {
+    "auth": [
+      "auth required pam_unix.so sha512 shadow try_first_pass",
+      "auth required pam_u2f.so openasuser"
+    ]
+  },
+  "packages": {
+    "debian_ubuntu": [
+      "libpam-u2f",
+      "pamu2fcfg"
+    ],
+    "fedora_rhel": [
+      "pam-u2f",
+      "pamu2fcfg"
+    ],
+    "alpine": [
+      "pam-u2f"
+    ],
+    "arch": [
+      "pam-u2f"
+    ]
+  },
+  "configuration_files": [],
+  "deployment_requirements": [
+    "YubiKey device for each user",
+    "pamu2fcfg enrollment tool"
+  ],
+  "management_tools": [
+    "yubikey-u2f-init.sh (user enrollment)"
+  ],
+  "bundle_source": "01-yubikey-basic",
+  "notes": "Each user maintains their own YubiKey registration in ~/.config/Yubico/u2f_keys",
+  "testing_steps": [
+    "1. User enrolls YubiKey: pamu2fcfg",
+    "2. Test login with password + YubiKey touch",
+    "3. Verify ~/.config/Yubico/u2f_keys exists"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

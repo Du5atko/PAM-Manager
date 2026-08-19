@@ -1,0 +1,86 @@
+{
+  "id": "bundle-user-messaging",
+  "bundle_name": "User Messaging and MOTD",
+  "version": "1.0.0",
+  "title": "System and User-Specific Messages",
+  "description": "Display system MOTD followed by per-user personal messages at login",
+  "category": "session",
+  "security_level": "low",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-user-messaging",
+      "import": "../Element.Templates/template.user-messaging.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "04-motd-userspecific.msh",
+  "deployment_requirements": [
+    "No additional packages required",
+    "Standard PAM modules"
+  ],
+  "management_tools": [
+    "setup-user-motd.sh"
+  ],
+  "configuration_files": [
+    "/etc/motd (system message)",
+    "~/.motd (per-user message)"
+  ],
+  "testing_steps": [
+    "1. Create /etc/motd with test message",
+    "2. User runs setup-user-motd.sh",
+    "3. Login and verify both messages"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

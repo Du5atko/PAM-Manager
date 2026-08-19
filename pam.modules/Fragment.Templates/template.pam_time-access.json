@@ -1,0 +1,61 @@
+{
+  "id": "pam_time-access",
+  "description": "Restrict user logins to specific days and time windows. Useful for enforcing business hours, contractor access, shift-based access.",
+  "module": "pam_time",
+  "interface": "account",
+  "parameters": {
+    "conffile": "Path to time.conf file (default: /etc/security/time.conf)"
+  },
+  "parameter_help": {
+    "conffile": "Configuration file defining time-based access rules"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "access-control",
+    "time-based",
+    "audit",
+    "compliance"
+  ],
+  "bundle_source": [
+    "06-time-restrictions"
+  ],
+  "pam_stack_examples": [
+    "account required pam_time.so"
+  ],
+  "security_level": "medium",
+  "configuration_format": {
+    "file": "/etc/security/time.conf",
+    "syntax": "service;user;tty;day-of-week HH:MM-HH:MM"
+  },
+  "configuration_examples": [
+    "login;user1;tty*;MoTuWeThFr0800-1800 (Monday-Friday 8am-6pm)",
+    "login;developers;*;Al0800-2000 (All days 8am-8pm)",
+    "sshd;contractors;*;Mo0900-1700 (Monday 9am-5pm)",
+    "sshd;admins;*;Al (All times, all days)"
+  ],
+  "day_codes": {
+    "Mo": "Monday",
+    "Tu": "Tuesday",
+    "We": "Wednesday",
+    "Th": "Thursday",
+    "Fr": "Friday",
+    "Sa": "Saturday",
+    "Su": "Sunday",
+    "Wk": "Weekdays (Mon-Fri)",
+    "Wd": "Weekends (Sat-Sun)",
+    "Al": "All days"
+  },
+  "ttys": {
+    "*": "All TTYs",
+    "tty*": "Physical terminals",
+    "console": "Console only"
+  },
+  "notes": "Uses system timezone. Effective immediately without service restart. Great for: business hours enforcement, contractor access control, emergency access windows.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

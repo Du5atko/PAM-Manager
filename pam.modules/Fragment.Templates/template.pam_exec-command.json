@@ -1,0 +1,50 @@
+{
+  "id": "pam_exec-command",
+  "description": "Execute external command or script during PAM processing. Flexible module for custom authentication/session logic.",
+  "module": "pam_exec",
+  "interface": "auth,session,account",
+  "parameters": {
+    "command": "Path to command to execute",
+    "env_file": "File with environment variables"
+  },
+  "parameter_help": {
+    "command": "Full path to script or binary to run. Can use pam environment variables like $USER, $HOME, etc.",
+    "env_file": "Read environment variables from file before executing command"
+  },
+  "platform_support": {
+    "debian_ubuntu": "libpam-modules",
+    "fedora_rhel": "pam",
+    "alpine": "pam",
+    "arch": "pam"
+  },
+  "tags": [
+    "session",
+    "custom",
+    "scripting",
+    "extensibility"
+  ],
+  "bundle_source": [
+    "04-motd-userspecific"
+  ],
+  "pam_stack_examples": [
+    "session optional pam_exec.so /usr/local/sbin/pam-user-motd.sh (run custom MOTD script)",
+    "session optional pam_exec.so /usr/local/sbin/setup-user-environment.sh"
+  ],
+  "security_level": "medium",
+  "security_warnings": [
+    "Script output (stdout/stderr) is logged to system logs",
+    "Script exit code determines module result",
+    "Be careful with sensitive data in scripts",
+    "Script runs as root when used in login/sshd"
+  ],
+  "environment_variables_available": [
+    "$PAM_SERVICE",
+    "$PAM_USER",
+    "$PAM_RHOST",
+    "$HOME",
+    "$LOGNAME"
+  ],
+  "notes": "Very flexible but requires careful script design for security. Used for custom session setup, user-specific configuration, dynamic MOTD, etc.",
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}

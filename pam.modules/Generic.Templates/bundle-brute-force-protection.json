@@ -1,0 +1,98 @@
+{
+  "id": "bundle-brute-force-protection",
+  "bundle_name": "Brute Force Protection",
+  "version": "1.0.0",
+  "title": "Intruder Lockout and Attack Prevention",
+  "description": "Lock accounts after failed authentication attempts to protect against brute force attacks",
+  "category": "security",
+  "security_level": "critical",
+  "pam_services": [
+    "login",
+    "sshd"
+  ],
+  "type": "Bundle",
+  "elements": [
+    {
+      "id": "element-brute-force-protection",
+      "import": "../Element.Templates/template.brute-force-protection.json",
+      "required": true
+    }
+  ],
+  "services": [
+    {
+      "name": "login",
+      "type": "standard",
+      "config_file": "/etc/pam.d/login"
+    },
+    {
+      "name": "sshd",
+      "type": "standard",
+      "config_file": "/etc/pam.d/sshd"
+    }
+  ],
+  "platforms": {
+    "Debian/Ubuntu": {
+      "packages": [
+        "libpam-modules"
+      ],
+      "package_manager": "apt"
+    },
+    "RedHat/CentOS": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    },
+    "Alpine": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "apk"
+    },
+    "Arch": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pacman"
+    },
+    "FreeBSD": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "pkg"
+    },
+    "Generic": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "generic"
+    },
+    "Fedora": {
+      "packages": [
+        "pam"
+      ],
+      "package_manager": "dnf"
+    }
+  },
+  "installation_script": "08-intruder-lockout.msh",
+  "deployment_requirements": [
+    "pam_faillock available",
+    "Proper PAM module ordering",
+    "Sufficient disk space for failure tracking"
+  ],
+  "management_tools": [
+    "show-locked-accounts.sh",
+    "unlock-user.sh",
+    "check-failed-attempts.sh"
+  ],
+  "configuration_files": [
+    "/var/run/faillock/ (auto-managed)"
+  ],
+  "testing_steps": [
+    "1. Attempt 5 failed logins",
+    "2. Verify account is locked",
+    "3. Run unlock-user.sh or wait 20 minutes"
+  ],
+  "created": "2026-08-16T00:00:00Z",
+  "modified": "2026-08-16T00:00:00Z"
+}
