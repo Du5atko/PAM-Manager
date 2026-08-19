@@ -1,0 +1,41 @@
+{
+  "name": "pam_apparmor",
+  "description": "AppArmor profile switching on login",
+  "detailed_description": "AppArmor security module that applies AppArmor profiles upon user login. Restricts user process capabilities based on AppArmor policies. Integrates Mandatory Access Control with authentication.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "DEBIAN",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "UBUNTU"
+  ],
+  "parameters": {},
+  "dependencies": [
+    "apparmor"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-apparmor",
+  "package_name_rhel": null,
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 14,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://gitlab.com/apparmor/apparmor/-/wikis/home",
+  "notes": "Applies AppArmor profiles on user login",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ]
+}
