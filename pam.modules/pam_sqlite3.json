@@ -1,0 +1,59 @@
+{
+  "name": "pam_sqlite3",
+  "description": "SQLite3 database authentication",
+  "detailed_description": "PAM module that uses SQLite3 database as authentication backend. Allows user authentication against local or remote SQLite database without requiring system users.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "db_path": "Path to SQLite3 database file",
+    "table_name": "Database table containing user data",
+    "username_field": "Column name for username",
+    "password_field": "Column name for password",
+    "password_hash": "Hash algorithm (md5, sha1, sha256)",
+    "check_password": "SQL query to verify password"
+  },
+  "dependencies": [
+    "libsqlite3-0"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-sqlite3",
+  "package_name_rhel": "pam-sqlite3",
+  "package_name_freebsd": "pam-sqlite3",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/HormyAJP/pam_sqlite3",
+  "notes": "Useful for custom authentication systems. Ensure proper password hashing.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-sqlite3, CENTOS_STREAM: pam-sqlite3, DEBIAN: pam-sqlite3, FEDORA: pam-sqlite3, KALI_LINUX: pam-sqlite3, LINUX_MINT: pam-sqlite3, REDHAT: pam-sqlite3, ROCKY_LINUX: pam-sqlite3, UBUNTU: pam-sqlite3, FREEBSD: pam-sqlite3, NETBSD: pam-sqlite3, OPENBSD: pam-sqlite3\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: libsqlite3-0\n- GitHub repository: HormyAJP/pam_sqlite3\n- GitHub repository pushed_at: 2022-11-22\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-sqlite3",
+  "package_name_netbsd": "pam-sqlite3"
+}

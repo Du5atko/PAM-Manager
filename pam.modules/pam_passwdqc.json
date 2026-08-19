@@ -1,0 +1,59 @@
+{
+  "name": "pam_passwdqc",
+  "description": "Password quality checking module (FreeBSD)",
+  "detailed_description": "Password quality checking module for PAM that verifies password strength and complexity. Supports passphrases and can generate random passwords. Provides flexible configuration for different password strength requirements. Available particularly on FreeBSD systems.",
+  "category": "password",
+  "supported_facilities": [
+    "PASSWORD"
+  ],
+  "supported_platforms": [
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD",
+    "DEBIAN",
+    "UBUNTU",
+    "KALI_LINUX",
+    "LINUX_MINT"
+  ],
+  "parameters": {
+    "min": "Minimum password lengths for different types",
+    "max": "Maximum allowed password length",
+    "passphrase": "Number of words required for passphrase",
+    "match": "Length of common substring to detect reuse",
+    "similar": "Allow similar passwords (permit/deny)",
+    "random": "Size of randomly-generated passwords in bits",
+    "enforce": "Enforcement level (none/users/everyone)",
+    "retry": "Number of retry attempts",
+    "ask_oldauthtok": "Ask for old password",
+    "use_first_pass": "Use password from previous module",
+    "non_unix": "Don't use system user database"
+  },
+  "dependencies": [],
+  "conflicts": [
+    "pam_cracklib",
+    "pam_pwquality"
+  ],
+  "package_name_debian": "libpam-passwdqc",
+  "package_name_rhel": null,
+  "package_name_freebsd": "libpam-passwdqc",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://man.freebsd.org/pam_passwdqc.8",
+  "notes": "Particularly popular on FreeBSD systems; alternative to pam_cracklib/pam_pwquality with different configuration approach.\n\n## Automated availability analysis\n- Directly available platforms: FREEBSD, NETBSD, OPENBSD\n- Platforms requiring additional installation: DEBIAN, UBUNTU, KALI_LINUX, LINUX_MINT\n- Required package names for installation-required platforms: libpam-passwdqc\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None\n- GitHub repository: https://github.com/openwall/passwdqc\n- GitHub repository pushed_at: 2024-06-15\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "libpam-passwdqc",
+  "package_name_netbsd": "libpam-passwdqc"
+}

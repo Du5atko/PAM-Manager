@@ -1,0 +1,56 @@
+{
+  "name": "pam_tty_audit",
+  "description": "Enable auditing of TTY input/output",
+  "detailed_description": "Session module that enables Linux audit framework logging of terminal input and output. Particularly useful for auditing command execution on administrative accounts. Provides comprehensive terminal activity logging for compliance and security monitoring.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "enable": "Enable TTY auditing for specific users",
+    "disable": "Disable TTY auditing for specific users",
+    "open_only": "Only enable on successful authentication",
+    "log_passwd": "Log password entry (security risk)"
+  },
+  "dependencies": [
+    "auditd"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": "linux-pam",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 30,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_tty_audit.html",
+  "notes": "Enables Linux audit framework logging of terminal activity. Requires audit subsystem and auditd.\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, FEDORA, REDHAT, ROCKY_LINUX\n- Platforms requiring additional installation: DEBIAN, KALI_LINUX, LINUX_MINT, UBUNTU\n- Required package names for installation-required platforms: auditd\n- Platforms with no package metadata (manual build/port): FREEBSD, NETBSD, OPENBSD\n- Additional tools needed for functionality: Linux audit framework (auditd)\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "linux-pam",
+  "package_name_netbsd": "linux-pam"
+}

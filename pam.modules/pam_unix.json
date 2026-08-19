@@ -1,0 +1,74 @@
+{
+  "name": "pam_unix",
+  "description": "Traditional /etc/passwd, /etc/shadow and /etc/group for authentication",
+  "detailed_description": "Traditional UNIX authentication module that uses standard system files (/etc/passwd, /etc/shadow, /etc/group) for user authentication. Selection of encryption methods are mutually exclusive, appropriate algorithm need to be verified for actual support. Supports password encryption with various methods including MD5, SHA512, and crypt. This is the fundamental building block of most PAM configurations and typically serves as the first authentication method.",
+  "category": "authentication",
+  "supported_facilities": [
+    "ACCOUNT",
+    "AUTH",
+    "PASSWORD",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "FREEBSD",
+    "OPENBSD",
+    "NETBSD",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU"
+  ],
+  "parameters": {
+    "[Without]algorithm": {
+      "md5": "(deprecated) and broken (2005) algorithm",
+      "descrypt": "(deprecated) and weak implementation of DES",
+      "bigcrypt": "(deprecated) and weak implementation of DES C2",
+      "blowfish": "(obsolete) use bcrypt encryption, limited to 72 characters",
+      "bcrypt": "(experimental) alternative name for blowfish encryption",
+      "sha1": "(deprecated) and weak since 2017",
+      "sha256": "(obsolete) Use SHA512 encryption",
+      "sha512": "Use SHA512 encryption (can be used)",
+      "scrypt": "(experimental) use of scrypt slow hash funcition",
+      "yescrypt": "Use of yescrypt slow hash function (recommended)",
+      "argon2id": "(experimental) use of Argon2id slow hash function",
+      "gost_yescrypt": "Use yescrypt with Streebog (glitch in Streebog found in 2015) ",
+      "sm3-yescrypt": "(experimental) Chinese standard based on SM3 hash function"
+    },
+    "shadow": "Use shadow file",
+    "nullok": "Allow empty password",
+    "nodelay": "Don't delay on failure",
+    "use_authtok": "Use previous auth token",
+    "try_first_pass": "Try password from previous module",
+    "remember": "Remember password history (password module)"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": "linux-pam",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 1,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_unix.html",
+  "notes": "Most basic authentication module, typically foundation of PAM stack\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, FREEBSD, OPENBSD, NETBSD, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "linux-pam",
+  "package_name_netbsd": "linux-pam"
+}

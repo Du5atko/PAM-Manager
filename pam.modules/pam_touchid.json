@@ -1,0 +1,42 @@
+{
+  "name": "pam_touchid",
+  "description": "TouchID biometric authentication for macOS",
+  "detailed_description": "PAM module enabling fingerprint authentication via macOS TouchID. Allows users to authenticate using biometric fingerprint instead of password, exclusive to Apple Silicon and Intel Macs with Touch Bar.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "MACOS"
+  ],
+  "parameters": {
+    "timeout": "Authentication timeout in seconds",
+    "fallback_auth": "Allow password fallback if TouchID fails",
+    "retry_count": "Number of TouchID retry attempts"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "N/A",
+  "package_name_rhel": "N/A",
+  "package_name_freebsd": "N/A",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/FiloSottile/pam_touchid",
+  "notes": "macOS only. Requires Touch ID capable hardware. Part of macOS security framework.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): MACOS\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: FiloSottile/pam_touchid\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "N/A",
+  "package_name_netbsd": "N/A"
+}

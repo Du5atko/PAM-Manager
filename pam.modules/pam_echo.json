@@ -1,0 +1,53 @@
+{
+  "name": "pam_echo",
+  "description": "Echo text messages during authentication",
+  "detailed_description": "Simple debugging and informational module that displays text messages during PAM authentication flow. Useful for providing user feedback or debugging PAM configurations. Messages are sent to the user's terminal.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "file": "Path to file containing message to echo"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": "linux-pam",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 50,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_echo.html",
+  "notes": "Utility module for displaying messages during authentication; useful for debugging and informational messages.\n\n## Automated availability analysis\n- Directly available platforms: All listed platforms\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "linux-pam",
+  "package_name_netbsd": "linux-pam"
+}

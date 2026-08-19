@@ -1,0 +1,56 @@
+{
+  "name": "pam_selinux",
+  "description": "SELinux context switching",
+  "detailed_description": "SELinux context switching module that sets appropriate SELinux context for users. Automatically assigns correct SELinux roles and types for logged-in users. RedHat-specific security enhancement.",
+  "category": "session",
+  "supported_facilities": [
+    "AUTH",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "debug": "Enable debug mode",
+    "restore": "Restore SELinux context"
+  },
+  "dependencies": [
+    "libselinux",
+    "selinux-policy"
+  ],
+  "conflicts": [],
+  "package_name_debian": null,
+  "package_name_rhel": "policycoreutils",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 14,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/SELinuxProject/selinux",
+  "notes": "Sets appropriate SELinux context for user\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, FEDORA, REDHAT, ROCKY_LINUX, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: policycoreutils, CENTOS_STREAM: policycoreutils, FEDORA: policycoreutils, REDHAT: policycoreutils, ROCKY_LINUX: policycoreutils, NETBSD: pam_selinux, OPENBSD: pam_selinux\n- Platforms with no package metadata (manual build/port): DEBIAN, KALI_LINUX, LINUX_MINT, UBUNTU, FREEBSD\n- Additional tools needed for functionality: libselinux, selinux-policy\n- GitHub repository: SELinuxProject/selinux\n- GitHub repository pushed_at: 2026-08-17\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_selinux",
+  "package_name_netbsd": "pam_selinux"
+}

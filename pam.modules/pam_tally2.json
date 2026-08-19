@@ -1,0 +1,61 @@
+{
+  "name": "pam_tally2",
+  "description": "Account lockout module (legacy)",
+  "detailed_description": "Legacy account lockout module for Debian/Ubuntu systems that maintains login failure counters. Tracks failed authentication attempts and locks accounts temporarily after exceeding the configured threshold. Gradually being replaced by pam_faillock on modern systems.",
+  "category": "account",
+  "supported_facilities": [
+    "ACCOUNT",
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "deny": "Number of attempts before lockout",
+    "lock_time": "Time to keep user locked out (seconds)",
+    "unlock_time": "Alternative parameter for lock time",
+    "root_unlock_time": "Unlock time for root",
+    "even_deny_root": "Apply limit even to root",
+    "reset": "Reset counters after successful login",
+    "audit": "Log all failed attempts",
+    "silent": "Don't print status messages"
+  },
+  "dependencies": [],
+  "conflicts": [
+    "pam_faillock"
+  ],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 5,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_tally2.html",
+  "notes": "Debian account lockout; deprecated in favor of pam_faillock on some systems\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Platforms requiring additional installation: NETBSD, OPENBSD\n- Required package names for installation-required platforms: NETBSD: pam_tally2, OPENBSD: pam_tally2\n- Platforms with no package metadata (manual build/port): FREEBSD\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_tally2",
+  "package_name_netbsd": "pam_tally2"
+}

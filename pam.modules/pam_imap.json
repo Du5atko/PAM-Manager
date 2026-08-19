@@ -1,0 +1,56 @@
+{
+  "name": "pam_imap",
+  "description": "IMAP server authentication",
+  "detailed_description": "PAM module that authenticates users against remote IMAP(S) servers. Useful for environments where email server is authoritative for authentication.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "PASSWORD"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "imap_server": "IMAP server hostname",
+    "imap_port": "IMAP port (default 143, 993 for IMAPS)",
+    "use_ssl": "Use SSL/TLS encryption",
+    "timeout": "Connection timeout in seconds",
+    "trim_domain": "Trim domain from username"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "pam-imap",
+  "package_name_rhel": "pam-imap",
+  "package_name_freebsd": "pam-imap",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/wdoekes/pam-imap",
+  "notes": "Requires IMAP server with plain authentication or SSL cert validation.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-imap, CENTOS_STREAM: pam-imap, DEBIAN: pam-imap, FEDORA: pam-imap, KALI_LINUX: pam-imap, LINUX_MINT: pam-imap, REDHAT: pam-imap, ROCKY_LINUX: pam-imap, UBUNTU: pam-imap, FREEBSD: pam-imap, NETBSD: pam-imap, OPENBSD: pam-imap\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: wdoekes/pam-imap\n- GitHub repository pushed_at: 2022-10-24\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-imap",
+  "package_name_netbsd": "pam-imap"
+}

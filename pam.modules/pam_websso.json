@@ -1,0 +1,59 @@
+{
+  "name": "pam_websso",
+  "description": "Web Single Sign-On authentication",
+  "detailed_description": "PAM module for Web SSO integration. Enables system authentication through web-based single sign-on services, bridging web and system authentication.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "sso_server": "SSO server URL",
+    "client_id": "SSO client ID",
+    "client_secret": "SSO client secret",
+    "callback_url": "OAuth callback URL",
+    "token_endpoint": "Token validation endpoint"
+  },
+  "dependencies": [
+    "curl",
+    "openssl"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-websso",
+  "package_name_rhel": "pam-websso",
+  "package_name_freebsd": "pam-websso",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/websso/pam-websso",
+  "notes": "Generic web SSO support. Works with standard OAuth2/OIDC providers.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-websso, CENTOS_STREAM: pam-websso, DEBIAN: pam-websso, FEDORA: pam-websso, KALI_LINUX: pam-websso, LINUX_MINT: pam-websso, REDHAT: pam-websso, ROCKY_LINUX: pam-websso, UBUNTU: pam-websso, FREEBSD: pam-websso, NETBSD: pam-websso, OPENBSD: pam-websso\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: curl, openssl\n- GitHub repository: websso/pam-websso\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-websso",
+  "package_name_netbsd": "pam-websso"
+}

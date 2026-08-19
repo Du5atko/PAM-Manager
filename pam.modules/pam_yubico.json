@@ -1,0 +1,58 @@
+{
+  "name": "pam_yubico",
+  "description": "YubiKey hardware authentication module",
+  "detailed_description": "YubiKey hardware authentication module providing strong two-factor authentication using Yubikey devices. Supports both challenge-response and OTP authentication modes. Requires registration of Yubikey devices per user for authentication.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "FREEBSD",
+    "OPENBSD",
+    "NETBSD",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU"
+  ],
+  "parameters": {
+    "mode": "Authentication mode (challenge-response, OTP)",
+    "debug": "Enable debug mode",
+    "authfile": "Path to user authentication data",
+    "id": "YubiCloud client ID",
+    "key": "YubiCloud client key"
+  },
+  "dependencies": [
+    "libpam-yubico",
+    "libyubiclient"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-yubico",
+  "package_name_rhel": "pam_yubico",
+  "package_name_freebsd": "pam_yubico",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 10,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/Yubico/yubico-pam",
+  "notes": "Hardware security key authentication\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, FREEBSD, OPENBSD, NETBSD, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Required package names for installation-required platforms: ALMA_LINUX: pam_yubico, CENTOS_STREAM: pam_yubico, DEBIAN: libpam-yubico, FEDORA: pam_yubico, FREEBSD: pam_yubico, OPENBSD: pam_yubico, NETBSD: pam_yubico, KALI_LINUX: libpam-yubico, LINUX_MINT: libpam-yubico, REDHAT: pam_yubico, ROCKY_LINUX: pam_yubico, UBUNTU: libpam-yubico\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: libpam-yubico, libyubiclient\n- GitHub repository: Yubico/yubico-pam\n- GitHub repository pushed_at: 2024-11-19\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_yubico",
+  "package_name_netbsd": "pam_yubico"
+}

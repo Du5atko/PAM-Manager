@@ -1,0 +1,57 @@
+{
+  "name": "pam_u2f",
+  "description": "FIDO2/U2F hardware key authentication",
+  "detailed_description": "FIDO2/U2F hardware key authentication module for security keys and tokens. Provides strong two-factor authentication using industry-standard U2F protocol. Supports multiple security keys per user.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "authfile": "Path to authentication file",
+    "debug": "Enable debug mode",
+    "origin": "FIDO2 origin",
+    "appid": "FIDO2 appid"
+  },
+  "dependencies": [
+    "libpam-u2f",
+    "libu2f-host"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-u2f",
+  "package_name_rhel": "pam_u2f",
+  "package_name_freebsd": "pam_u2f",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 10,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/Yubico/pam-u2f",
+  "notes": "Universal 2nd Factor hardware key support\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam_u2f, CENTOS_STREAM: pam_u2f, DEBIAN: libpam-u2f, FEDORA: pam_u2f, KALI_LINUX: libpam-u2f, LINUX_MINT: libpam-u2f, REDHAT: pam_u2f, ROCKY_LINUX: pam_u2f, UBUNTU: libpam-u2f, FREEBSD: pam_u2f, NETBSD: pam_u2f, OPENBSD: pam_u2f\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: libpam-u2f, libu2f-host\n- GitHub repository: Yubico/pam-u2f\n- GitHub repository pushed_at: 2025-03-27\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_u2f",
+  "package_name_netbsd": "pam_u2f"
+}

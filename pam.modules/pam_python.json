@@ -1,0 +1,62 @@
+{
+  "name": "pam_python",
+  "description": "Python scripting for PAM modules",
+  "detailed_description": "PAM module that runs the Python interpreter, allowing PAM authentication logic to be written entirely in Python without C compilation.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT",
+    "PASSWORD",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "script_path": "Path to Python script file",
+    "function_name": "Python function to call for authentication",
+    "debug": "Enable debug output from Python script",
+    "python_version": {
+      "2": "Python 2",
+      "3": "Python 3"
+    }
+  },
+  "dependencies": [
+    "python3"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-python",
+  "package_name_rhel": "pam-python",
+  "package_name_freebsd": "pam-python",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/Ralnoc/pam-python",
+  "notes": "Allows rapid development of custom authentication modules. Requires Python expertise.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-python, CENTOS_STREAM: pam-python, DEBIAN: pam-python, FEDORA: pam-python, KALI_LINUX: pam-python, LINUX_MINT: pam-python, REDHAT: pam-python, ROCKY_LINUX: pam-python, UBUNTU: pam-python, FREEBSD: pam-python, NETBSD: pam-python, OPENBSD: pam-python\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: python3\n- GitHub repository: Ralnoc/pam-python\n- GitHub repository pushed_at: 2020-04-24\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-python",
+  "package_name_netbsd": "pam-python"
+}

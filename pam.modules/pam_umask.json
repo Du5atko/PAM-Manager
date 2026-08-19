@@ -1,0 +1,52 @@
+{
+  "name": "pam_umask",
+  "description": "Set umask for session",
+  "detailed_description": "Session environment module that sets the default file creation mask (umask) for user sessions. Allows per-user umask configuration to control default file/directory permissions. Configurable via pam_env.conf or direct parameters.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "OPENBSD",
+    "NETBSD"
+  ],
+  "parameters": {
+    "umask": "File creation mode mask",
+    "userenv": "Override umask from environment"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": null,
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 13,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_umask.html",
+  "notes": "Sets default file creation mask for user sessions\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Platforms requiring additional installation: OPENBSD, NETBSD\n- Required package names for installation-required platforms: OPENBSD: pam_umask, NETBSD: pam_umask\n- Platforms with no package metadata (manual build/port): FREEBSD\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_umask",
+  "package_name_netbsd": "pam_umask"
+}

@@ -1,0 +1,57 @@
+{
+  "name": "pam_yubipam",
+  "description": "YubiPAM one-time password authentication",
+  "detailed_description": "PAM module for YubiKey OTP authentication. Integrates Yubico YubiKey hardware tokens for one-time password-based authentication.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "client_id": "Yubico API client ID",
+    "secret_key": "Yubico API secret key",
+    "user_keys_file": "User to YubiKey mapping file",
+    "timeout": "API timeout",
+    "verify_signature": "Verify OTP signature"
+  },
+  "dependencies": [
+    "libcurl4"
+  ],
+  "conflicts": [],
+  "package_name_debian": "yubipam",
+  "package_name_rhel": "yubipam",
+  "package_name_freebsd": "yubipam",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/firnsy/yubipam",
+  "notes": "Requires YubiKey hardware. Uses Yubico cloud API for OTP validation.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: yubipam, CENTOS_STREAM: yubipam, DEBIAN: yubipam, FEDORA: yubipam, KALI_LINUX: yubipam, LINUX_MINT: yubipam, REDHAT: yubipam, ROCKY_LINUX: yubipam, UBUNTU: yubipam, FREEBSD: yubipam, NETBSD: yubipam, OPENBSD: yubipam\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: libcurl4\n- GitHub repository: firnsy/yubipam\n- GitHub repository pushed_at: 2015-10-28\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "yubipam",
+  "package_name_netbsd": "yubipam"
+}

@@ -1,0 +1,54 @@
+{
+  "name": "pam_faildelay",
+  "description": "Delay on login failure to prevent brute-force attacks",
+  "detailed_description": "Introduces a delay (sleep) after a failed login attempt. The delay increases security by reducing the rate at which an attacker can attempt password guesses. Configurable delay duration and can be skipped under certain conditions.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "delay": "Delay in microseconds after failed authentication attempt (default: 1000000)",
+    "nights": "Skip delay during night hours (alternative to delay)",
+    "sundays": "Skip delay on Sundays",
+    "user": "Specific user to apply delay for"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": "linux-pam",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 3,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_faildelay.html",
+  "notes": "Provides rate-limiting protection against brute-force attacks by introducing configurable delays after failed authentication attempts. Often used in conjunction with pam_faillock or pam_tally2 for comprehensive account protection.\n\n## Automated availability analysis\n- Directly available platforms: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, FREEBSD, OPENBSD, NETBSD, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "linux-pam",
+  "package_name_netbsd": "linux-pam"
+}

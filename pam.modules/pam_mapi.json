@@ -1,0 +1,53 @@
+{
+  "name": "pam_mapi",
+  "description": "MAPI authentication module (Exchange/Outlook)",
+  "detailed_description": "Authentication module for MAPI (Messaging API) based systems, particularly Microsoft Exchange and Outlook. Provides integration with MAPI-based mail servers for centralized authentication and authorization.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "hostname": "MAPI server hostname",
+    "port": "MAPI server port",
+    "domain": "Authentication domain"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": null,
+  "package_name_rhel": null,
+  "package_name_freebsd": null,
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 4,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_mapi.html",
+  "notes": "MAPI authentication for Exchange/Outlook systems; requires additional MAPI libraries.\n\n## Automated availability analysis\n- Directly available platforms: None (requires compilation/installation)\n- Platforms requiring additional installation: All\n- Required package names for installation-required platforms: pam-mapi or libpam-mapi\n- Platforms with no package metadata (manual build/port): All\n- Additional tools needed for functionality: MAPI development libraries, Exchange/Outlook server\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: yes",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": null,
+  "package_name_netbsd": null
+}

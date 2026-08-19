@@ -1,0 +1,55 @@
+{
+  "name": "pam_duress",
+  "description": "Alternate password for emergency data clearing",
+  "detailed_description": "Allows users to provide an alternate 'duress' password that can be used to trigger emergency actions such as clearing sensitive data, notifying security staff, or closing sensitive network connections if coerced. Provides emergency access mechanisms without compromising security.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "duress_user": "User to authenticate as when duress password is used",
+    "duress_action": "Action to execute (clear, notify, lock)",
+    "emergency_contacts": "Contacts to notify on duress trigger",
+    "prompt": "Custom prompt for duress password",
+    "log_location": "Where to log duress attempts"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "pam-duress",
+  "package_name_rhel": "pam-duress",
+  "package_name_freebsd": "pam-duress",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 3,
+  "deprecated": false,
+  "maintenance_status": "active",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/nuvious/pam-duress",
+  "notes": "Provides emergency access and data protection mechanisms. Requires careful configuration of duress actions.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-duress, CENTOS_STREAM: pam-duress, DEBIAN: pam-duress, FEDORA: pam-duress, KALI_LINUX: pam-duress, LINUX_MINT: pam-duress, REDHAT: pam-duress, ROCKY_LINUX: pam-duress, UBUNTU: pam-duress, FREEBSD: pam-duress, NETBSD: pam-duress, OPENBSD: pam-duress\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: nuvious/pam-duress\n- GitHub repository pushed_at: 2026-07-16\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-duress",
+  "package_name_netbsd": "pam-duress"
+}

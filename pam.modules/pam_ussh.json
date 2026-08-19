@@ -1,0 +1,56 @@
+{
+  "name": "pam_ussh",
+  "description": "Uber SSH certificate authentication",
+  "detailed_description": "PAM module for Uber's SSH certificate protocol. Enables SSH authentication using short-lived certificates instead of keys, improving key security and audit trails.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "ca_key": "SSH CA public key file path",
+    "max_validity": "Maximum certificate validity period",
+    "key_requirements": "SSH key algorithm requirements",
+    "require_cert_principals": "Enforce certificate principals"
+  },
+  "dependencies": [
+    "openssh-client"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-ussh",
+  "package_name_rhel": "pam-ussh",
+  "package_name_freebsd": "pam-ussh",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/uber/pam-ussh",
+  "notes": "Enterprise SSH access control. Requires SSH CA infrastructure setup.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-ussh, CENTOS_STREAM: pam-ussh, DEBIAN: pam-ussh, FEDORA: pam-ussh, KALI_LINUX: pam-ussh, LINUX_MINT: pam-ussh, REDHAT: pam-ussh, ROCKY_LINUX: pam-ussh, UBUNTU: pam-ussh, FREEBSD: pam-ussh, NETBSD: pam-ussh, OPENBSD: pam-ussh\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: openssh-client\n- GitHub repository: uber/pam-ussh\n- GitHub repository pushed_at: 2022-03-30\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-ussh",
+  "package_name_netbsd": "pam-ussh"
+}

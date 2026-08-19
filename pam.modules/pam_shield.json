@@ -1,0 +1,62 @@
+{
+  "name": "pam_shield",
+  "description": "Automatic brute-force attack prevention",
+  "detailed_description": "Automatically blocks IP addresses attempting brute-force password guessing attacks. Monitors failed login attempts and applies dynamic firewall rules to prevent further attacks from the same source.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "max_attempts": "Maximum failed attempts before blocking",
+    "block_duration": "How long to block IP (seconds)",
+    "check_interval": "Interval for checking attempts (seconds)",
+    "whitelist": "File with whitelisted IPs",
+    "log_file": "Location of shield log file",
+    "use_iptables": "Use iptables for blocking",
+    "reset_attempts": "Reset counter on successful login"
+  },
+  "dependencies": [
+    "iptables"
+  ],
+  "conflicts": [
+    "pam_abl",
+    "pam_faillock"
+  ],
+  "package_name_debian": "pam-shield",
+  "package_name_rhel": "pam-shield",
+  "package_name_freebsd": "pam-shield",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 1,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/jtniehof/pam_shield",
+  "notes": "Similar to pam_faillock but uses firewall rules for blocking. Requires iptables access.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-shield, CENTOS_STREAM: pam-shield, DEBIAN: pam-shield, FEDORA: pam-shield, KALI_LINUX: pam-shield, LINUX_MINT: pam-shield, REDHAT: pam-shield, ROCKY_LINUX: pam-shield, UBUNTU: pam-shield, FREEBSD: pam-shield, NETBSD: pam-shield, OPENBSD: pam-shield\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: iptables\n- GitHub repository: jtniehof/pam_shield\n- GitHub repository pushed_at: 2022-08-31\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-shield",
+  "package_name_netbsd": "pam-shield"
+}

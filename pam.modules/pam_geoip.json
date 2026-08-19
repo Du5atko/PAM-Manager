@@ -1,0 +1,56 @@
+{
+  "name": "pam_geoip",
+  "description": "GeoIP-based access control",
+  "detailed_description": "PAM module using MaxMind GeoIP2 database for geographic access control. Restricts login access based on user's physical location using IP geolocation.",
+  "category": "account",
+  "supported_facilities": [
+    "ACCOUNT"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "db_path": "Path to GeoIP2 MaxMind database",
+    "allowed_countries": "Comma-separated list of allowed country codes",
+    "denied_countries": "Comma-separated list of denied country codes",
+    "allow_private_ips": "Allow private/internal IP addresses"
+  },
+  "dependencies": [
+    "libmaxminddb0"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-geoip",
+  "package_name_rhel": "pam-geoip",
+  "package_name_freebsd": "pam-geoip",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/amishmm/pam_geoip",
+  "notes": "Requires GeoIP2 MaxMind database subscription. Useful for preventing unauthorized geographic access.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-geoip, CENTOS_STREAM: pam-geoip, DEBIAN: pam-geoip, FEDORA: pam-geoip, KALI_LINUX: pam-geoip, LINUX_MINT: pam-geoip, REDHAT: pam-geoip, ROCKY_LINUX: pam-geoip, UBUNTU: pam-geoip, FREEBSD: pam-geoip, NETBSD: pam-geoip, OPENBSD: pam-geoip\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: libmaxminddb0\n- GitHub repository: amishmm/pam_geoip\n- GitHub repository pushed_at: 2019-02-17\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-geoip",
+  "package_name_netbsd": "pam-geoip"
+}

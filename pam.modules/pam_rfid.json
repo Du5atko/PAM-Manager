@@ -1,0 +1,56 @@
+{
+  "name": "pam_rfid",
+  "description": "RFID card authentication",
+  "detailed_description": "RFID (Radio-Frequency Identification) PAM module for authentication using RFID cards or badges. Suitable for physical access control integrated with login.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "reader_device": "RFID reader device path",
+    "user_cards_dir": "Directory mapping RFID card IDs to users",
+    "timeout": "RFID read timeout in seconds",
+    "uid_format": "Format of RFID card ID"
+  },
+  "dependencies": [
+    "rfid-tools"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-rfid",
+  "package_name_rhel": "pam-rfid",
+  "package_name_freebsd": "pam-rfid",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 3,
+  "deprecated": false,
+  "maintenance_status": "experimental",
+  "security_impact": "Low",
+  "documentation_url": "https://github.com/philippmeisberger/pam-rfid",
+  "notes": "Requires RFID hardware and card provisioning.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-rfid, CENTOS_STREAM: pam-rfid, DEBIAN: pam-rfid, FEDORA: pam-rfid, KALI_LINUX: pam-rfid, LINUX_MINT: pam-rfid, REDHAT: pam-rfid, ROCKY_LINUX: pam-rfid, UBUNTU: pam-rfid, FREEBSD: pam-rfid, NETBSD: pam-rfid, OPENBSD: pam-rfid\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: rfid-tools\n- GitHub repository: philippmeisberger/pam-rfid\n- GitHub repository pushed_at: 2023-07-10\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-rfid",
+  "package_name_netbsd": "pam-rfid"
+}

@@ -1,0 +1,56 @@
+{
+  "name": "pam_simple_pam",
+  "description": "Basic PAM module framework",
+  "detailed_description": "Simple and minimal PAM module framework for rapid prototyping. Provides basic PAM structure without external dependencies for easy customization.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH",
+    "ACCOUNT",
+    "PASSWORD",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "config_file": "Module configuration file",
+    "debug": "Enable debug output",
+    "allow_fallback": "Allow password fallback"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "pam-simple",
+  "package_name_rhel": "pam-simple",
+  "package_name_freebsd": "pam-simple",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 3,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://github.com/beatgammit/simple-pam",
+  "notes": "Basic framework for custom PAM development. Minimal configuration needed.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-simple, CENTOS_STREAM: pam-simple, DEBIAN: pam-simple, FEDORA: pam-simple, KALI_LINUX: pam-simple, LINUX_MINT: pam-simple, REDHAT: pam-simple, ROCKY_LINUX: pam-simple, UBUNTU: pam-simple, FREEBSD: pam-simple, NETBSD: pam-simple, OPENBSD: pam-simple\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: beatgammit/simple-pam\n- GitHub repository pushed_at: 2011-05-25\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-simple",
+  "package_name_netbsd": "pam-simple"
+}

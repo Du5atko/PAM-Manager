@@ -1,0 +1,56 @@
+{
+  "name": "pam_pwnd",
+  "description": "Check passwords against haveibeenpwned database",
+  "detailed_description": "PAM module to test passwords against the haveibeenpwned.com database during password change. Prevents users from choosing compromised passwords.",
+  "category": "password",
+  "supported_facilities": [
+    "PASSWORD"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "url": "haveibeenpwned API URL",
+    "timeout": "Connection timeout in seconds",
+    "disable_on_network_failure": "Allow password if API unreachable",
+    "cache_dir": "Cache directory for previous checks"
+  },
+  "dependencies": [
+    "curl"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-pwnd",
+  "package_name_rhel": "pam-pwnd",
+  "package_name_freebsd": "pam-pwnd",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 1,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/skx/pam_pwnd",
+  "notes": "Requires internet access to haveibeenpwned API. Helps prevent use of compromised passwords.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-pwnd, CENTOS_STREAM: pam-pwnd, DEBIAN: pam-pwnd, FEDORA: pam-pwnd, KALI_LINUX: pam-pwnd, LINUX_MINT: pam-pwnd, REDHAT: pam-pwnd, ROCKY_LINUX: pam-pwnd, UBUNTU: pam-pwnd, FREEBSD: pam-pwnd, NETBSD: pam-pwnd, OPENBSD: pam-pwnd\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: curl\n- GitHub repository: skx/pam_pwnd\n- GitHub repository pushed_at: 2019-08-25\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-pwnd",
+  "package_name_netbsd": "pam-pwnd"
+}

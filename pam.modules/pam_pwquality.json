@@ -1,0 +1,60 @@
+{
+  "name": "pam_pwquality",
+  "description": "Password quality checking module",
+  "detailed_description": "Modern password quality checking module that enforces strong password policies. Validates new passwords against multiple criteria including length, character composition, and similarity to old passwords. Provides comprehensive feedback when passwords fail validation.",
+  "category": "password",
+  "supported_facilities": [
+    "PASSWORD"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "minlen": "Minimum password length",
+    "dcredit": "Credit for digits",
+    "ucredit": "Credit for uppercase letters",
+    "lcredit": "Credit for lowercase letters",
+    "ocredit": "Credit for other characters",
+    "difok": "Number of characters different from old password",
+    "maxrepeat": "Maximum repeated characters",
+    "usercheck": "Check against username",
+    "enforce_for_root": "Enforce rules for root",
+    "reject_username": "Reject if password contains username"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-pwquality",
+  "package_name_rhel": "libpwquality",
+  "package_name_freebsd": "pam_pwquality",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 1,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/libpwquality/libpwquality",
+  "notes": "Replace pam_cracklib; provides better password quality checking\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: libpwquality, CENTOS_STREAM: libpwquality, DEBIAN: libpam-pwquality, FEDORA: libpwquality, KALI_LINUX: libpam-pwquality, LINUX_MINT: libpam-pwquality, REDHAT: libpwquality, ROCKY_LINUX: libpwquality, UBUNTU: libpam-pwquality, FREEBSD: pam_pwquality, NETBSD: pam_pwquality, OPENBSD: pam_pwquality\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: libpwquality/libpwquality\n- GitHub repository pushed_at: 2026-07-03\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam_pwquality",
+  "package_name_netbsd": "pam_pwquality"
+}

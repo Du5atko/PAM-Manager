@@ -1,0 +1,58 @@
+{
+  "name": "pam_abl",
+  "description": "Automatic blacklist PAM module",
+  "detailed_description": "Auto blacklisting module that automatically blocks accounts or IPs after repeated failed authentication attempts. Maintains persistent blacklist database.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "db_path": "Path to blacklist database",
+    "user_threshold": "Failed attempts before blacklisting user",
+    "host_threshold": "Failed attempts before blacklisting host",
+    "reset_attempts": "Reset counter on successful login",
+    "whitelist": "File with whitelisted IPs/users"
+  },
+  "dependencies": [],
+  "conflicts": [
+    "pam_faillock",
+    "pam_shield"
+  ],
+  "package_name_debian": "pam-abl",
+  "package_name_rhel": "pam-abl",
+  "package_name_freebsd": "pam-abl",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 1,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://github.com/deksai/pam_abl",
+  "notes": "Similar to pam_faillock but with persistent database. Choose one brute-force prevention module.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-abl, CENTOS_STREAM: pam-abl, DEBIAN: pam-abl, FEDORA: pam-abl, KALI_LINUX: pam-abl, LINUX_MINT: pam-abl, REDHAT: pam-abl, ROCKY_LINUX: pam-abl, UBUNTU: pam-abl, FREEBSD: pam-abl, NETBSD: pam-abl, OPENBSD: pam-abl\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None specified in JSON metadata\n- GitHub repository: deksai/pam_abl\n- GitHub repository pushed_at: 2020-10-28\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-abl",
+  "package_name_netbsd": "pam-abl"
+}

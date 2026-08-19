@@ -1,0 +1,51 @@
+{
+  "name": "pam_loginuid",
+  "description": "Set login UID attribute for process accounting",
+  "detailed_description": "Session module that sets the login UID (LOGINUID) attribute in the kernel for process accounting and audit logging. Essential for proper audit trail tracking and system accounting. Typically used with systemd and auditd.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "require_action": "Fail if LOGINUID cannot be set"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": "linux-pam",
+  "preferred_control_flag": "REQUIRED",
+  "recommended_ordering": 1,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_loginuid.html",
+  "notes": "Essential for Linux audit framework; sets login UID for process accounting and audit trail.\n\n## Automated availability analysis\n- Directly available platforms: All listed platforms\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: Linux audit framework (auditd) for full functionality\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "linux-pam",
+  "package_name_netbsd": "linux-pam"
+}

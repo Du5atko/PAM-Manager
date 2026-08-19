@@ -1,0 +1,61 @@
+{
+  "name": "pam_winbind",
+  "description": "Samba Winbind authentication",
+  "detailed_description": "Samba Winbind authentication module for Microsoft Active Directory integration. Enables Linux authentication against Windows Active Directory servers. Supports both direct authentication and password hashing.",
+  "category": "authentication",
+  "supported_facilities": [
+    "ACCOUNT",
+    "AUTH",
+    "PASSWORD",
+    "SESSION"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "use_first_pass": "Use password from previous module",
+    "use_authtok": "Use provided authentication token",
+    "try_first_pass": "Try password from previous module",
+    "cached_login": "Cache login information",
+    "debug": "Enable debug mode"
+  },
+  "dependencies": [
+    "samba",
+    "winbind"
+  ],
+  "conflicts": [],
+  "package_name_debian": "libpam-winbind",
+  "package_name_rhel": "samba-winbind-clients",
+  "package_name_freebsd": "samba47",
+  "preferred_control_flag": "SUFFICIENT",
+  "recommended_ordering": 2,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "High",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_winbind.html",
+  "notes": "Microsoft Active Directory authentication via Samba Winbind\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: samba-winbind-clients, CENTOS_STREAM: samba-winbind-clients, DEBIAN: libpam-winbind, FEDORA: samba-winbind-clients, KALI_LINUX: libpam-winbind, LINUX_MINT: libpam-winbind, REDHAT: samba-winbind-clients, ROCKY_LINUX: samba-winbind-clients, UBUNTU: libpam-winbind, FREEBSD: samba47, NETBSD: samba47, OPENBSD: samba47\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: samba, winbind\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "samba47",
+  "package_name_netbsd": "samba47"
+}

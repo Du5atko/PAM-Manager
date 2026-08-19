@@ -1,0 +1,56 @@
+{
+  "name": "pam_qrcode",
+  "description": "QR Code challenge-response authentication",
+  "detailed_description": "QR Code based authentication using challenge-response protocol. User scans QR code with phone to approve login, providing second factor of authentication.",
+  "category": "authentication",
+  "supported_facilities": [
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "challenge_server": "Challenge server URL",
+    "timeout": "Challenge approval timeout in seconds",
+    "app_id": "QR Code app identifier",
+    "display_device": "Device for QR display (screen, printer)"
+  },
+  "dependencies": [
+    "qrencode"
+  ],
+  "conflicts": [],
+  "package_name_debian": "pam-qrcode",
+  "package_name_rhel": "pam-qrcode",
+  "package_name_freebsd": "pam-qrcode",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 3,
+  "deprecated": false,
+  "maintenance_status": "experimental",
+  "security_impact": "Medium",
+  "documentation_url": "https://github.com/mlabouardy/pam-qrcode",
+  "notes": "Requires smartphone with QR code reader app.\n\n## Automated availability analysis\n- Directly available platforms: None\n- Platforms requiring additional installation: ALMA_LINUX, CENTOS_STREAM, DEBIAN, FEDORA, KALI_LINUX, LINUX_MINT, REDHAT, ROCKY_LINUX, UBUNTU, FREEBSD, NETBSD, OPENBSD\n- Required package names for installation-required platforms: ALMA_LINUX: pam-qrcode, CENTOS_STREAM: pam-qrcode, DEBIAN: pam-qrcode, FEDORA: pam-qrcode, KALI_LINUX: pam-qrcode, LINUX_MINT: pam-qrcode, REDHAT: pam-qrcode, ROCKY_LINUX: pam-qrcode, UBUNTU: pam-qrcode, FREEBSD: pam-qrcode, NETBSD: pam-qrcode, OPENBSD: pam-qrcode\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: qrencode\n- GitHub repository: mlabouardy/pam-qrcode\n- GitHub repository pushed_at: 2017-04-18\n- Last module status check date: 2026-08-17\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "pam-qrcode",
+  "package_name_netbsd": "pam-qrcode"
+}

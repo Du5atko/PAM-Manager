@@ -1,0 +1,33 @@
+{
+  "Fragments": [],
+  "Elements": [],
+  "Services": [
+    {
+      "filename": "template.recovery-console.json",
+      "name": "recovery-console",
+      "description": "Recovery console, where user need to use physical terminal and specific FIDO/U2F token. After succesfull login, credential righst could be elevated by appropriate settings of sudo."
+    },
+    {
+      "filename": "template.system-and-certificate-and-otp.json",
+      "name": "system-and-certificate-and-otp",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key), X.509 certificate and OTP (HOTP/TOTP)."
+    },
+    {
+      "filename": "template.system-and-certificate-and-yubikey.json",
+      "name": "system-and-certificate-and-yubikey",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key) and FIDO/U2F (Yubikey)."
+    },
+    {
+      "filename": "template.system-and-otp.json",
+      "name": "system-and-otp",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key) and OTP (HOTP/TOTP)."
+    },
+    {
+      "filename": "template.system-and-yubikey.json",
+      "name": "system-and-yubikey",
+      "description": "MFA service for login, where user need to be verified by system (password/ssh key) and FIDO/U2F (Yubikey)."
+    }
+  ],
+  "Bundles": [],
+  "Generic": []
+}

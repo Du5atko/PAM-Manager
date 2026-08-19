@@ -1,0 +1,54 @@
+{
+  "name": "pam_timestamp",
+  "description": "Credential caching for sudo and privileged operations",
+  "detailed_description": "Session module that enables credential timestamp caching, reducing the need to re-authenticate within a configurable time window. Commonly used by sudo to cache successful authentications. Improves user experience for repeated privilege escalation.",
+  "category": "session",
+  "supported_facilities": [
+    "SESSION",
+    "AUTH"
+  ],
+  "supported_platforms": [
+    "ALMA_LINUX",
+    "CENTOS_STREAM",
+    "DEBIAN",
+    "FEDORA",
+    "KALI_LINUX",
+    "LINUX_MINT",
+    "REDHAT",
+    "ROCKY_LINUX",
+    "UBUNTU",
+    "FREEBSD",
+    "NETBSD",
+    "OPENBSD"
+  ],
+  "parameters": {
+    "timestamp_dir": "Directory for storing timestamp files",
+    "verbose": "Verbose logging",
+    "interval": "Caching interval in seconds"
+  },
+  "dependencies": [],
+  "conflicts": [],
+  "package_name_debian": "libpam-modules",
+  "package_name_rhel": "pam",
+  "package_name_freebsd": "linux-pam",
+  "preferred_control_flag": "OPTIONAL",
+  "recommended_ordering": 20,
+  "deprecated": false,
+  "maintenance_status": "maintained",
+  "security_impact": "Low",
+  "documentation_url": "https://linux-pam.readthedocs.io/en/latest/modules/pam_timestamp.html",
+  "notes": "Enables credential caching for improved user experience; commonly used with sudo.\n\n## Automated availability analysis\n- Directly available platforms: All listed platforms\n- Platforms requiring additional installation: None\n- Required package names for installation-required platforms: None\n- Platforms with no package metadata (manual build/port): None\n- Additional tools needed for functionality: None\n- GitHub repository: Unavailable\n- GitHub repository pushed_at: Unavailable\n- Last module status check date: 2026-08-20\n- GitHub-only with compilation required: no",
+  "supported_extended_return_values": [
+    "default",
+    "ignore",
+    "success"
+  ],
+  "supported_extended_actions": [
+    "done",
+    "ignore",
+    "ok",
+    "reset"
+  ],
+  "package_name_openbsd": "linux-pam",
+  "package_name_netbsd": "linux-pam"
+}
