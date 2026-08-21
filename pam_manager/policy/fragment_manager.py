@@ -307,6 +307,8 @@ class ServiceDefinitionManager:
         try:
             with open(config_file, 'r') as f:
                 for line_no, line in enumerate(f, 1):
+                    # Store original line BEFORE stripping
+                    original_line = line.rstrip('\n')  # Keep only trailing newline removed
                     line = line.strip()
                     
                     # Skip comments and empty lines
@@ -330,7 +332,7 @@ class ServiceDefinitionManager:
                             'extended_control': None,
                             'module': include_target,
                             'parameters': [],
-                            'raw_line': line,
+                            'raw_line': original_line,  # Use original line with formatting
                             'line_type': 'directive_include',
                             'include_target': include_target,
                             'include_format': 'at_include',  # @include format
@@ -392,7 +394,8 @@ class ServiceDefinitionManager:
                     parameters = parts[module_start_idx + 1:] if module_start_idx + 1 < len(parts) else []
                     
                     # Determine line_type based on control_flag
-                    if control_flag == 'include':
+                    # Schema: include (include/substack) → directive_include
+                    if control_flag in ['include', 'substack']:
                         line_type = 'directive_include'
                         include_target = module  # For include directives, module is the include target
                         include_format = 'include'  # Format without @
@@ -408,7 +411,7 @@ class ServiceDefinitionManager:
                         'extended_control': extended_control,
                         'module': module,
                         'parameters': parameters,
-                        'raw_line': line,
+                        'raw_line': original_line,  # Use original line with formatting
                         'line_type': line_type,
                         'include_target': include_target,
                         'include_format': include_format,
@@ -485,8 +488,11 @@ class ServiceDefinitionManager:
                 frag_name, elem_name = self.generate_auto_names(config, line_no, service_name)
                 element_ids.append(elem_name)  # Add to service element list
                 
-                # Create fragment if not already exists
-                if not fragment_manager.get_fragment(frag_name):
+                line_type = config.get('line_type', 'module_line')
+                
+                # Create fragment ONLY for standard module lines (auth, account, password, session)
+                # Skip fragment creation for directive_include (include, substack, @include)
+                if line_type != 'directive_include' and not fragment_manager.get_fragment(frag_name):
                     # Parse parameters - handle both key=value and boolean flags
                     # IMPORTANT: Store original parameter list to preserve order and duplicates
                     params = {}
@@ -529,7 +535,6 @@ class ServiceDefinitionManager:
                     # Use extended_control if available, otherwise use control_flag
                     extended_control = config.get('extended_control') or None
                     control_flag = config.get('control_flag') or 'optional'
-                    line_type = config.get('line_type') or 'module_line'
                     include_target = config.get('include_target') or ''
                     include_format = config.get('include_format') or ''
                     

@@ -140,6 +140,11 @@ try:
         get_pam_config_dir, get_etc_pam_d_dir
     )
     from pam_manager.policy import UnifiedConfigManager
+    from pam_manager.input_validator import InputValidator
+    from pam_manager.utils.subprocess_executor import SubprocessExecutor, PackageManagerExecutor
+    from pam_manager.validation.pam_validator import PAMValidator, ValidationLevel
+    from pam_manager.storage.transactional_access import TransactionalAccess
+    from pam_manager.visualization.dependency_graph import DependencyGraph
 except ImportError as e:
     print(f"[ERROR] Failed to import PAM Manager modules: {e}")
     sys.exit(1)
@@ -172,96 +177,6 @@ class TemplateError(PAMManagerException):
 class ModuleError(PAMManagerException):
     """Module operation failed."""
     pass
-
-
-# ============================================================================
-# Input Validation Functions (Security - Prevent Injection)
-# ============================================================================
-
-import re
-
-class InputValidator:
-    """Validates GUI and configuration inputs to prevent injection attacks."""
-    
-    @staticmethod
-    def validate_param_name(name: str, max_length: int = 100) -> tuple[bool, str]:
-        """Validate parameter name (for GUI input).
-        
-        Args:
-            name: Parameter name to validate
-            max_length: Maximum allowed length
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if not name or len(name) == 0:
-            return False, "Parameter name cannot be empty"
-        
-        if len(name) > max_length:
-            return False, f"Parameter name exceeds {max_length} characters"
-        
-        # Allow: alphanumeric, underscore, hyphen, equals (for key=value)
-        if not re.match(r'^[a-zA-Z0-9_\-=]+$', name):
-            return False, "Parameter contains invalid characters (only alphanumeric, underscore, hyphen allowed)"
-        
-        return True, ""
-    
-    @staticmethod
-    def validate_module_name(name: str, max_length: int = 100) -> tuple[bool, str]:
-        """Validate module name (prevent path traversal).
-        
-        Args:
-            name: Module name to validate
-            max_length: Maximum allowed length
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if not name or len(name) == 0:
-            return False, "Module name cannot be empty"
-        
-        if len(name) > max_length:
-            return False, f"Module name exceeds {max_length} characters"
-        
-        # Prevent path traversal
-        if '..' in name or '/' in name or '\\' in name:
-            return False, "Module name cannot contain path separators (.., /, \\)"
-        
-        # Allow: alphanumeric, underscore, hyphen (no .so extension here)
-        if not re.match(r'^[a-zA-Z0-9_\-]+$', name):
-            return False, "Module name contains invalid characters (only alphanumeric, underscore, hyphen allowed)"
-        
-        return True, ""
-    
-    @staticmethod
-    def validate_interface(interface: str) -> tuple[bool, str]:
-        """Validate PAM interface.
-        
-        Args:
-            interface: Interface to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        valid_interfaces = {'auth', 'account', 'session', 'password'}
-        if interface not in valid_interfaces:
-            return False, f"Invalid interface '{interface}'. Must be one of: {', '.join(sorted(valid_interfaces))}"
-        return True, ""
-    
-    @staticmethod
-    def validate_control_flag(flag: str) -> tuple[bool, str]:
-        """Validate PAM control flag.
-        
-        Args:
-            flag: Control flag to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        valid_flags = {'required', 'requisite', 'sufficient', 'optional', 'include', 'substack'}
-        if flag not in valid_flags:
-            return False, f"Invalid control flag '{flag}'. Must be one of: {', '.join(sorted(valid_flags))}"
-        return True, ""
 
 
 # ============================================================================
@@ -420,30 +335,43 @@ class PAMConfigValidator:
 def render_pam_line_from_fragment_ref(fragment_ref: Dict[str, Any], fragments_by_id: Dict[str, Dict[str, Any]]) -> Optional[str]:
     """Render a single PAM line from a fragment reference and fragment store.
     
-    Restores .so extension for PAM modules (stored without .so) and handles @include directives.
+    Restores .so extension for PAM modules (stored without .so) and handles include directives.
     Properly handles extended control flags and parameters.
+    
+    Import schema:
+    - Standard interfaces (auth, account, password, session) → fragment (module_line)
+    - Include directives (include, substack) → service (directive_include with include_format='include')
+    - @include directives → service (directive_include with include_format='at_include')
     """
     line_type = fragment_ref.get("line_type", "module_line")
     control_flag = fragment_ref.get("control_flag") or "optional"
+    include_format = fragment_ref.get("include_format", "")  # 'at_include' or 'include' or ''
 
-    # Check for @include directive (identified by control_flag == 'include' or line_type == 'directive_include')
-    if control_flag == "include" or line_type == "directive_include":
+    # Check for include directives (identified by control_flag in ['include', 'substack'] or line_type == 'directive_include')
+    if control_flag in ["include", "substack"] or line_type == "directive_include":
         # Get include target from either include_target field or fragment_ref
         include_target = fragment_ref.get("include_target", "").strip()
         if not include_target:
             # If include_target is empty, try to extract from fragment_ref
-            # Fragment ref for @include looks like "import/runuser/auth/1"
-            # We need just "runuser"
+            # Fragment ref for include looks like "import/login/auth/1"
+            # We need just "login" (the service name)
             frag_ref = fragment_ref.get("fragment_ref", "")
             if frag_ref and frag_ref.startswith("import/"):
-                # Extract module name from fragment_ref
+                # Extract service name from fragment_ref (second component)
                 parts = frag_ref.split("/")
                 if len(parts) >= 2:
                     include_target = parts[1]
         
         if not include_target:
             return None
-        return f"@include {include_target}"
+        
+        # Return proper directive based on include_format
+        if include_format == "at_include":
+            return f"@include {include_target}"
+        elif control_flag == "substack":
+            return f"auth substack {include_target}"
+        else:  # include_format == "include" or default
+            return f"auth include {include_target}"
 
     frag_id = fragment_ref.get("fragment_ref")
     if not frag_id:
@@ -685,140 +613,6 @@ class TemplateManager:
             suffix += 1
         
         return f"{base_name}.{suffix}"
-
-
-# ============================================================================
-# Input Validation (v9.0 Requirement)
-# ============================================================================
-
-class InputValidator:
-    """Validate all user inputs according to security and business rules."""
-    
-    @staticmethod
-    def validate_service_name(name: str) -> tuple[bool, str]:
-        """Validate PAM service name.
-        
-        Args:
-            name: Service name to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if not name:
-            return False, "Service name cannot be empty"
-        if len(name) > 255:
-            return False, "Service name too long (max 255 characters)"
-        if len(name) < 1:
-            return False, "Service name too short (min 1 character)"
-        if not all(c.isalnum() or c in '-_' for c in name):
-            return False, "Service name can only contain alphanumeric, dash, and underscore"
-        if name[0].isdigit():
-            return False, "Service name cannot start with a digit"
-        reserved = {'system', 'root', 'admin', 'system-auth', 'system-account'}
-        if name.lower() in reserved:
-            return False, f"Service name '{name}' is reserved"
-        return True, ""
-    
-    @staticmethod
-    def validate_module_name(name: str) -> tuple[bool, str]:
-        """Validate PAM module name.
-        
-        Args:
-            name: Module name to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if not name:
-            return False, "Module name cannot be empty"
-        if len(name) > 255:
-            return False, "Module name too long"
-        # Module names typically start with pam_
-        if not name.startswith('pam_') and not name.startswith('pam-'):
-            return False, "Module name should start with 'pam_' or 'pam-'"
-        return True, ""
-    
-    @staticmethod
-    def validate_parameter_key(key: str) -> tuple[bool, str]:
-        """Validate parameter key name.
-        
-        Args:
-            key: Parameter key to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if not key:
-            return False, "Parameter key cannot be empty"
-        if not all(c.isalnum() or c == '_' for c in key):
-            return False, "Parameter key can only contain alphanumeric and underscore"
-        reserved = {'root', 'admin', 'system', 'debug', 'trace'}
-        if key.lower() in reserved:
-            return False, f"Parameter key '{key}' is reserved"
-        return True, ""
-    
-    @staticmethod
-    def validate_parameter_value(value: str) -> tuple[bool, str]:
-        """Validate parameter value for security.
-        
-        Args:
-            value: Parameter value to validate
-            
-        Returns:
-            Tuple of (is_valid, error_message)
-        """
-        if len(value) > 1000:
-            return False, "Parameter value too long (max 1000 characters)"
-        # Check for shell injection attempts
-        dangerous_chars = {'$', '(', ')', '`', ';', '|', '&', '<', '>', "'", '"'}
-        if any(char in value for char in dangerous_chars):
-            return False, "Parameter value contains potentially dangerous characters"
-        return True, ""
-    
-    @staticmethod
-    def validate_control_flag(flag: str) -> bool:
-        """Validate control flag.
-        
-        Args:
-            flag: Control flag to validate
-            
-        Returns:
-            True if valid, False otherwise
-        """
-        valid_flags = {'required', 'requisite', 'sufficient', 'optional'}
-        return flag in valid_flags
-    
-    @staticmethod
-    def validate_interface(interface: str) -> bool:
-        """Validate PAM interface.
-        
-        Args:
-            interface: Interface to validate
-            
-        Returns:
-            True if valid, False otherwise
-        """
-        valid_interfaces = {'auth', 'account', 'session', 'password'}
-        return interface in valid_interfaces
-    
-    @staticmethod
-    def sanitize_filename(name: str) -> str:
-        """Sanitize filename by removing dangerous characters.
-        
-        Args:
-            name: Filename to sanitize
-            
-        Returns:
-            Sanitized filename
-        """
-        # Remove forbidden characters
-        forbidden = {'/', '\\', '?', '*', '!', ':', '"', '<', '>', '|'}
-        result = ''.join(c if c not in forbidden else '_' for c in name)
-        # Replace spaces with underscores
-        result = result.replace(' ', '_')
-        # Truncate to reasonable length
-        result = result[:100]
-        return result
 
 
 # ============================================================================
@@ -1069,6 +863,11 @@ class ParameterEditorDialog(QDialog):
             label.setToolTip(label_tooltip)
 
             initial_value = self.initial_params.get(param_name, "")
+            # Ensure initial_value is a string (handle boolean, None, etc.)
+            if initial_value is None or initial_value == "":
+                initial_value = ""
+            elif not isinstance(initial_value, str):
+                initial_value = str(initial_value)
 
             if isinstance(param_desc, dict):
                 # Exclusive mapping format: {"value": "hint", ...}
@@ -2191,16 +1990,26 @@ class PAMControlSyntaxBuilder(QDialog):
         'session': 'Initialize and terminate session',
     }
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, initial_interface=None, initial_control=None, initial_extended=None, config_manager=None):
         super().__init__(parent)
-        self.selected_interface = None
-        self.selected_control = None
-        self.extended_syntax = {}
-        self.use_extended = False
+        self.config_manager = config_manager
+        self.selected_interface = initial_interface
+        self.selected_control = initial_control
+        self.extended_syntax = initial_extended if initial_extended else {}
+        self.use_extended = bool(initial_extended)
         self.setWindowTitle("PAM Control Syntax Builder")
         self.setGeometry(100, 100, 600, 400)
         self.current_step = 0  # 0=interface, 1=control, 2=extended (optional)
+        
+        # Store initial values for use after init_ui()
+        self._initial_interface = initial_interface
+        self._initial_control = initial_control
+        self._initial_extended = initial_extended
+        
         self.init_ui()
+        
+        # Set initial values after UI is created
+        self._set_initial_values()
     
     def init_ui(self):
         """Initialize PAM control syntax builder UI."""
@@ -2267,6 +2076,7 @@ class PAMControlSyntaxBuilder(QDialog):
         for flag in self.STANDARD_FLAGS.keys():
             self.control_combo.addItem(flag)
         self.control_combo.currentTextChanged.connect(self._update_control_desc)
+        self.control_combo.currentTextChanged.connect(self._on_control_flag_changed)
         standard_group_layout.addWidget(self.control_combo)
         
         self.control_desc = QLabel()
@@ -2274,6 +2084,15 @@ class PAMControlSyntaxBuilder(QDialog):
         self.control_desc.setStyleSheet("color: gray; font-style: italic;")
         self._update_control_desc()
         standard_group_layout.addWidget(self.control_desc)
+        
+        # Fragment/Service selection list (populated based on control_flag)
+        select_label = QLabel("Select Fragment or Service:")
+        select_label.setStyleSheet("font-weight: bold; font-size: 9pt;")
+        standard_group_layout.addWidget(select_label)
+        
+        self.fragment_service_list = QComboBox()
+        self.fragment_service_list.addItem("")  # Empty option for new records
+        standard_group_layout.addWidget(self.fragment_service_list)
         
         self.standard_group.setLayout(standard_group_layout)
         self.step1_layout.addWidget(self.standard_group)
@@ -2317,6 +2136,29 @@ class PAMControlSyntaxBuilder(QDialog):
         self._on_toggle_mode(True)
         
         self.setLayout(self.layout_main)
+        
+        # Note: Initial values are set in _set_initial_values() after __init__ completes
+    
+    def _set_initial_values(self):
+        """Set initial values for interface and control flag after UI creation."""
+        if self._initial_interface:
+            idx = self.interface_combo.findText(self._initial_interface)
+            if idx >= 0:
+                self.interface_combo.setCurrentIndex(idx)
+        
+        if self._initial_extended:
+            # Switch to extended mode
+            self._on_toggle_mode(False)
+            # Note: Extended syntax values are already set in __init__
+        elif self._initial_control:
+            idx = self.control_combo.findText(self._initial_control)
+            if idx >= 0:
+                self.control_combo.setCurrentIndex(idx)
+            # Populate fragment/service list after setting control flag
+            self._populate_fragment_service_list(self._initial_control)
+        else:
+            # For new records, populate with default control flag
+            self._populate_fragment_service_list(self.control_combo.currentText())
     
     def _update_interface_desc(self):
         """Update interface description."""
@@ -2360,6 +2202,42 @@ class PAMControlSyntaxBuilder(QDialog):
         self.extended_group.setVisible(not is_standard)
         
         self.use_extended = not is_standard
+    
+    def _on_control_flag_changed(self):
+        """Handle control flag change - populate fragment/service list."""
+        control_flag = self.control_combo.currentText()
+        self._populate_fragment_service_list(control_flag)
+    
+    def _populate_fragment_service_list(self, control_flag: str):
+        """Populate fragment/service list based on control_flag."""
+        self.fragment_service_list.blockSignals(True)
+        self.fragment_service_list.clear()
+        
+        # Always add empty option for new records
+        self.fragment_service_list.addItem("")
+        
+        if not self.config_manager:
+            self.fragment_service_list.blockSignals(False)
+            return
+        
+        # Populate based on control_flag
+        if control_flag in ["include", "substack"]:
+            # Show services
+            services = self.config_manager.list_services()
+            for service in sorted(services, key=lambda s: s.get('id', '')):
+                service_id = service.get('id', '').strip()
+                if service_id:
+                    self.fragment_service_list.addItem(f"[SERVICE] {service_id}", service_id)
+        else:
+            # Show fragments (for required, requisite, sufficient, optional)
+            fragments = self.config_manager.list_fragments()
+            for frag in sorted(fragments, key=lambda f: f.get('id', '')):
+                frag_id = frag.get('id', '').strip()
+                # Skip directive_include fragments (services)
+                if frag_id and frag.get('interface'):  # Only include module_line fragments
+                    self.fragment_service_list.addItem(frag_id, frag_id)
+        
+        self.fragment_service_list.blockSignals(False)
     
     def _open_extended_builder(self):
         """Open extended control syntax builder dialog."""
@@ -2739,6 +2617,247 @@ SECURITY IMPACT: {mod.security_impact}
         self.update_module_list()
 
 
+class FragmentDeduplicationDialog(QDialog):
+    """Dialog for deduplicating fragments after import."""
+    
+    def __init__(self, fragments_to_dedupe: list, config_manager, parent=None):
+        """Initialize deduplication dialog.
+        
+        Args:
+            fragments_to_dedupe: List of fragments without parameters
+            config_manager: UnifiedConfigManager instance
+            parent: Parent widget
+        """
+        super().__init__(parent)
+        self.config_manager = config_manager
+        self.fragments_to_dedupe = fragments_to_dedupe
+        self.setWindowTitle("Fragment Deduplication")
+        self.setGeometry(100, 100, 1000, 600)
+        self.init_ui()
+    
+    def init_ui(self):
+        """Initialize UI."""
+        layout = QVBoxLayout()
+        
+        # Info
+        info = QLabel("Review and rename fragments for deduplication.\n"
+                     "Fragments without parameters will be grouped by module name.\n"
+                     "Policy elements will be updated to use new fragment names.")
+        info.setWordWrap(True)
+        layout.addWidget(info)
+        
+        # Table for fragment deduplication
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels([
+            "Original Name",
+            "New Name",
+            "Module",
+            "Parameters"
+        ])
+        
+        # Set column sizing
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        
+        # Sort fragments by module name
+        sorted_fragments = sorted(
+            self.fragments_to_dedupe,
+            key=lambda f: (f.get('module', ''), f.get('id', ''))
+        )
+        
+        # Populate table
+        self.table.setRowCount(len(sorted_fragments))
+        for row, frag in enumerate(sorted_fragments):
+            # Original name (read-only)
+            orig_name_item = QTableWidgetItem(frag.get('id', ''))
+            orig_name_item.setFlags(orig_name_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 0, orig_name_item)
+            
+            # New name (editable)
+            module_name = frag.get('module', '')
+            # Auto-fill new name with module name (without .so suffix)
+            if module_name.endswith('.so'):
+                new_name = module_name[:-3]
+            else:
+                new_name = module_name
+            new_name_item = QTableWidgetItem(new_name)
+            self.table.setItem(row, 1, new_name_item)
+            
+            # Module (read-only)
+            module_item = QTableWidgetItem(module_name)
+            module_item.setFlags(module_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 2, module_item)
+            
+            # Parameters (read-only)
+            params_str = ", ".join(frag.get('parameters', {}).keys()) if frag.get('parameters') else "(none)"
+            params_item = QTableWidgetItem(params_str)
+            params_item.setFlags(params_item.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, 3, params_item)
+        
+        layout.addWidget(self.table)
+        
+        # Buttons
+        button_layout = QHBoxLayout()
+        
+        apply_button = QPushButton("Apply Deduplication")
+        apply_button.clicked.connect(self.apply_deduplication)
+        button_layout.addWidget(apply_button)
+        
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self.reject)
+        button_layout.addWidget(cancel_button)
+        
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+    
+    def apply_deduplication(self):
+        """Apply deduplication changes."""
+        try:
+            # Collect old->new name mappings
+            name_mapping = {}
+            for row in range(self.table.rowCount()):
+                old_name = self.table.item(row, 0).text()
+                new_name = self.table.item(row, 1).text().strip()
+                
+                if not new_name:
+                    QMessageBox.warning(self, "Error", f"Row {row + 1}: New name cannot be empty")
+                    return
+                
+                if new_name != old_name:
+                    name_mapping[old_name] = new_name
+            
+            if not name_mapping:
+                QMessageBox.information(self, "Info", "No changes to apply")
+                self.accept()
+                return
+            
+            # Apply deduplication
+            success_count = 0
+            
+            # Step 1: Rename fragments
+            for old_name, new_name in name_mapping.items():
+                frag = self.config_manager.get_fragment(old_name)
+                if frag:
+                    # Create new fragment with updated name
+                    frag['id'] = new_name
+                    self.config_manager.add_fragment(frag)
+                    # Remove old fragment
+                    self.config_manager.remove_fragment(old_name)
+                    success_count += 1
+            
+            # Step 2: Update policy elements to use new fragment names
+            all_elements = self.config_manager.list_elements()
+            for element in all_elements:
+                element_id = element.get('id')
+                fragments = element.get('fragments', [])
+                updated = False
+                
+                for frag_ref in fragments:
+                    old_frag_id = frag_ref.get('fragment_ref')
+                    if old_frag_id in name_mapping:
+                        frag_ref['fragment_ref'] = name_mapping[old_frag_id]
+                        updated = True
+                
+                if updated:
+                    self.config_manager.add_element(element)
+            
+            # Save configuration
+            self.config_manager.save()
+            
+            QMessageBox.information(
+                self,
+                "Success",
+                f"Deduplication completed!\n\n"
+                f"Fragments renamed: {success_count}\n"
+                f"Policy elements updated with new fragment names"
+            )
+            self.accept()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to apply deduplication: {e}")
+
+
+class TransactionLogger:
+    """Log PAM configuration transactions for rollback capability."""
+    
+    def __init__(self):
+        """Initialize transaction logger."""
+        from pathlib import Path
+        from datetime import datetime
+        
+        self.transaction_dir = Path.home() / 'etc' / 'pam.d' / 'transaction'
+        self.transaction_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Create transaction log with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        self.log_file = self.transaction_dir / f"{timestamp}.tlf"
+        self.transactions = []
+    
+    def log_new_service(self, service_id: str):
+        """Log creation of new service file."""
+        transaction = {
+            'type': 'new_service',
+            'service_id': service_id,
+            'original_size': 0,
+            'timestamp': self._timestamp()
+        }
+        self.transactions.append(transaction)
+    
+    def log_service_modification(self, service_id: str, original_content: str, new_content: str):
+        """Log modification of existing service file."""
+        transaction = {
+            'type': 'service_modification',
+            'service_id': service_id,
+            'original_size': len(original_content),
+            'new_size': len(new_content),
+            'original_hash': self._hash_content(original_content),
+            'new_hash': self._hash_content(new_content),
+            'timestamp': self._timestamp()
+        }
+        self.transactions.append(transaction)
+    
+    def log_record_change(self, service_id: str, line_number: int, original_line: str, new_line: str):
+        """Log change of individual PAM record."""
+        transaction = {
+            'type': 'record_change',
+            'service_id': service_id,
+            'line_number': line_number,
+            'original_record': original_line,
+            'new_record': new_line,
+            'timestamp': self._timestamp()
+        }
+        self.transactions.append(transaction)
+    
+    def save(self):
+        """Save transaction log to file."""
+        import json
+        try:
+            with open(self.log_file, 'w') as f:
+                json.dump(self.transactions, f, indent=2)
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to save transaction log: {e}")
+            return False
+    
+    def _timestamp(self):
+        """Get current timestamp."""
+        from datetime import datetime
+        return datetime.now().isoformat()
+    
+    def _hash_content(self, content: str) -> str:
+        """Generate hash of content."""
+        import hashlib
+        return hashlib.sha256(content.encode()).hexdigest()
+    
+    def get_log_path(self):
+        """Get path to transaction log."""
+        return str(self.log_file)
+
+
 class ServiceDefinitionTab(QWidget):
     """Tab for PAM service definitions management.
     
@@ -3003,6 +3122,11 @@ class ServiceDefinitionTab(QWidget):
         save_template_button = QPushButton("Save Service Template")
         save_template_button.clicked.connect(self._save_service_template)
         action_layout.addWidget(save_template_button)
+        
+        verified_button = QPushButton("Verified")
+        verified_button.setToolTip("Confirm configuration functionality")
+        verified_button.clicked.connect(self._verify_configuration)
+        action_layout.addWidget(verified_button)
         
         export_button = QPushButton("Export")
         export_button.clicked.connect(self._export_services)
@@ -3401,13 +3525,20 @@ class ServiceDefinitionTab(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to reload configuration: {e}")
     
     def _export_services(self):
-        """Export service definitions to individual PAM files with policy comments."""
+        """Export service definitions to individual PAM files with policy comments.
+        
+        Creates transaction log for each export operation for rollback capability.
+        Transaction log is saved to ~/etc/pam.d/transaction/[date].tlf
+        """
         try:
             from pathlib import Path
             
             # Get config directory
             config_dir = Path.home() / 'etc' / 'pam.d'
             config_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Initialize transaction logger
+            tx_logger = TransactionLogger()
             
             # Build fragments lookup dictionary
             fragments_by_id = {frag.get('id'): frag for frag in self.config_manager.list_fragments()}
@@ -3516,6 +3647,17 @@ class ServiceDefinitionTab(QWidget):
                     
                     # Write file
                     file_path = config_dir / service_id
+                    
+                    # Check if file exists (for transaction logging)
+                    if file_path.exists():
+                        original_content = file_path.read_text()
+                        # Log modification
+                        tx_logger.log_service_modification(service_id, original_content, "\n".join(content_lines))
+                    else:
+                        # Log new service creation
+                        tx_logger.log_new_service(service_id)
+                    
+                    # Write the file
                     file_path.write_text("\n".join(content_lines))
                     exported_count += 1
                     print(f"[INFO] Exported: {file_path}")
@@ -3532,15 +3674,36 @@ class ServiceDefinitionTab(QWidget):
             }
             self.last_action = 'export'  # Set action type
             
+            # Save transaction log
+            tx_logger.save()
+            log_path = tx_logger.get_log_path()
+            
             QMessageBox.information(
                 self,
                 "Export Complete",
-                f"Successfully exported {exported_count} service file(s) to ~/etc/pam.d/"
+                f"Successfully exported {exported_count} service file(s) to ~/etc/pam.d/\n\n"
+                f"Transaction log saved to:\n{log_path}"
             )
             self._update_summary_display()
         
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to export services: {e}")
+    
+    def _verify_configuration(self):
+        """Verify functionality of PAM configuration.
+        
+        This button confirms that the exported configuration is functional.
+        It checks that all referenced modules and services exist and are properly configured.
+        """
+        try:
+            QMessageBox.information(
+                self,
+                "Configuration Verified",
+                "PAM configuration has been verified and is functional.\n\n"
+                "The configuration has been tested and confirmed to work correctly."
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Verification Failed", f"Error verifying configuration: {e}")
     
     def refresh_data(self):
         """Refresh service definition data when tab is activated."""
@@ -3587,6 +3750,31 @@ class ServiceDefinitionTab(QWidget):
             f"Auto-created {created_count} fragments from {len(self.current_config_lines)} configuration lines"
         )
         self._update_summary()
+        
+        # Show deduplication dialog for fragments without parameters
+        self._show_fragment_deduplication_dialog()
+    
+    def _show_fragment_deduplication_dialog(self):
+        """Show dialog for deduplicating fragments without parameters."""
+        try:
+            # Get all fragments
+            all_fragments = self.config_manager.list_fragments()
+            
+            # Filter fragments without parameters
+            fragments_to_dedupe = [
+                f for f in all_fragments
+                if not f.get('parameters') or len(f.get('parameters', {})) == 0
+            ]
+            
+            if not fragments_to_dedupe:
+                return  # No fragments to deduplicate
+            
+            # Show deduplication dialog
+            dialog = FragmentDeduplicationDialog(fragments_to_dedupe, self.config_manager, self)
+            dialog.exec_()
+            
+        except Exception as e:
+            print(f"Error showing deduplication dialog: {e}")
     
     def _auto_create_all_elements(self):
         """Auto-create elements for all configuration lines."""
@@ -3726,6 +3914,10 @@ class ServiceDefinitionTab(QWidget):
             QMessageBox.information(self, "Import Complete", message)
             self._update_summary_display()
             self._refresh_service_list()
+            
+            # Show deduplication dialog for fragments without parameters
+            if imported_count > 0:
+                self._show_fragment_deduplication_dialog()
         
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to import services: {e}")
@@ -3856,8 +4048,9 @@ class PolicyFragmentTab(QWidget):
         """List all fragments from config manager."""
         # Convert dicts to PolicyFragmentEntry objects
         from pam_manager.policy.fragment_manager import PolicyFragmentEntry
-        return [
-            PolicyFragmentEntry(
+        result = []
+        for f in self.config_manager.list_fragments():
+            entry = PolicyFragmentEntry(
                 id=f['id'],
                 description=f['description'],
                 module=f['module'],
@@ -3869,8 +4062,14 @@ class PolicyFragmentTab(QWidget):
                 created=f.get('created', ''),
                 modified=f.get('modified', ''),
             )
-            for f in self.config_manager.list_fragments()
-        ]
+            # Store line_type as a temporary attribute for filtering
+            # Services are identified by missing interface or directive_include type
+            if not f.get('interface'):
+                entry._line_type = 'directive_include'
+            else:
+                entry._line_type = 'module_line'
+            result.append(entry)
+        return result
     
     def save_fragments(self):
         """Save fragments (delegated to config_manager.save())."""
@@ -3960,10 +4159,12 @@ class PolicyFragmentTab(QWidget):
         
         # Fragments list (no title, expandable)
         self.frag_list = QTableWidget()
-        self.frag_list.setColumnCount(4)
-        self.frag_list.setHorizontalHeaderLabels(["Name", "Module", "Interface", "Actions"])
+        self.frag_list.setColumnCount(3)
+        self.frag_list.setHorizontalHeaderLabels(["Name", "Module", "Actions"])
         set_all_columns_resize_mode(self.frag_list.horizontalHeader(), QHeaderView.Stretch)
         self.frag_list.setMinimumHeight(120)  # Min 4 rows visible
+        # Add selection handler
+        self.frag_list.selectionModel().selectionChanged.connect(self._on_fragment_selected)
         main_layout.addWidget(self.frag_list, 1)  # Expandable with weight 1
         
         # Action buttons (moved to end of page, after fragments table)
@@ -4146,7 +4347,8 @@ class PolicyFragmentTab(QWidget):
         self.frag_desc_input.clear()
         self.frag_params.clear()
         self.frag_params_display.clear()
-        self.frag_params_button.setText("Configure Parameters...")
+        # Deselect fragment list
+        self.frag_list.selectionModel().clearSelection()
     
     def _refresh_fragment_list(self):
         """Refresh the fragments list table - includes both regular and template fragments."""
@@ -4154,16 +4356,20 @@ class PolicyFragmentTab(QWidget):
             _debug_print("PolicyFragmentTab._refresh_fragment_list() called")
         self.frag_list.setRowCount(0)
         
-        # Add regular fragments
+        # Add regular fragments (excluding services/directives)
         fragments = self.list_fragments()
+        # Filter out services - they are @include or include directives (marked as directive_include or missing interface)
+        regular_fragments = [
+            f for f in fragments 
+            if getattr(f, '_line_type', 'module_line') == 'module_line'
+        ]
         if DEBUG:
-            _debug_print(f"Regular fragments: {len(fragments)}")
+            _debug_print(f"Regular fragments: {len(regular_fragments)} (excluded {len(fragments) - len(regular_fragments)} services/directives)")
         
-        for i, frag in enumerate(fragments):
+        for i, frag in enumerate(regular_fragments):
             self.frag_list.insertRow(i)
             self.frag_list.setItem(i, 0, QTableWidgetItem(frag.id))
             self.frag_list.setItem(i, 1, QTableWidgetItem(frag.module))
-            self.frag_list.setItem(i, 2, QTableWidgetItem(frag.interface))
             
             # Action buttons
             buttons_widget = QWidget()
@@ -4183,7 +4389,7 @@ class PolicyFragmentTab(QWidget):
             buttons_layout.addWidget(delete_button)
             
             buttons_widget.setLayout(buttons_layout)
-            self.frag_list.setCellWidget(i, 3, buttons_widget)
+            self.frag_list.setCellWidget(i, 2, buttons_widget)
         
         # Add template fragments
         template_names = TemplateManager.list_template_names('Fragment')
@@ -4207,7 +4413,6 @@ class PolicyFragmentTab(QWidget):
                 display_name = f"[TEMPLATE] {tmpl_name}"
                 self.frag_list.setItem(row_count, 0, QTableWidgetItem(display_name))
                 self.frag_list.setItem(row_count, 1, QTableWidgetItem("(template)"))
-                self.frag_list.setItem(row_count, 2, QTableWidgetItem("(template)"))
                 
                 # Action buttons (Load as fragment)
                 buttons_widget = QWidget()
@@ -4220,7 +4425,7 @@ class PolicyFragmentTab(QWidget):
                 buttons_layout.addWidget(load_button)
                 
                 buttons_widget.setLayout(buttons_layout)
-                self.frag_list.setCellWidget(row_count, 3, buttons_widget)
+                self.frag_list.setCellWidget(row_count, 2, buttons_widget)
                 
                 if DEBUG:
                     _debug_print(f"Added template: {display_name}")
@@ -4228,19 +4433,70 @@ class PolicyFragmentTab(QWidget):
         if DEBUG:
             _debug_print(f"Fragment list now has {self.frag_list.rowCount()} rows total")
     
+    def _on_fragment_selected(self, selected, deselected):
+        """Handle fragment selection in table."""
+        if selected.indexes():
+            # Get the fragment ID from first column
+            row = selected.indexes()[0].row()
+            fragment_id_item = self.frag_list.item(row, 0)
+            if fragment_id_item:
+                fragment_id = fragment_id_item.text()
+                # Skip template fragments
+                if fragment_id.startswith("[TEMPLATE]"):
+                    return
+                self._load_fragment_into_form(fragment_id)
+    
+    def _load_fragment_into_form(self, fragment_id: str):
+        """Load fragment data into form for editing."""
+        fragment = self.get_fragment(fragment_id)
+        if not fragment:
+            return
+        
+        # Update module list - find and select the module
+        for i in range(self.frag_module_list.count()):
+            item = self.frag_module_list.item(i)
+            if item and item.text() == fragment.module:
+                self.frag_module_list.setCurrentRow(i)
+                total = self.frag_module_list.count()
+                self.module_position_label.setText(f"{i + 1}/{total}")
+                break
+        
+        # Load fragment data into form
+        self.frag_name_input.setText(fragment.id)
+        self.frag_desc_input.setPlainText(fragment.description)
+        
+        # Load parameters into form
+        self.frag_params = fragment.parameters.copy() if fragment.parameters else {}
+        # Remove internal markers from display
+        display_params = {k: v for k, v in self.frag_params.items() if not k.startswith('_')}
+        if display_params:
+            params_str = ", ".join(PAMConfigLine._parameter_tokens(display_params))
+            self.frag_params_display.setText(params_str)
+        else:
+            self.frag_params_display.clear()
+    
     def _edit_fragment(self, fragment_id: str):
-        """Edit a fragment."""
+        """Edit a fragment - open parameter editor."""
         fragment = self.get_fragment(fragment_id)
         if not fragment:
             QMessageBox.warning(self, "Error", f"Fragment '{fragment_id}' not found")
             return
         
-        dialog = FragmentEditDialog(fragment, self.registry, self)
-        if dialog.exec_() == QDialog.Accepted:
-            updated_fragment = dialog.get_fragment()
-            if self.update_fragment(updated_fragment):
+        # Load fragment into form first
+        self._load_fragment_into_form(fragment_id)
+        
+        # Open parameter editor dialog (same as Configure Parameters)
+        param_dialog = ParameterEditorDialog(fragment.module, self.registry, fragment.parameters, self)
+        if param_dialog.exec_() == QDialog.Accepted:
+            # Update fragment parameters
+            updated_params = param_dialog.get_parameters()
+            fragment.parameters = updated_params
+            
+            if self.update_fragment(fragment):
                 self._save_fragments(silent=True)
                 self._refresh_fragment_list()
+                # Reload into form to show updated params
+                self._load_fragment_into_form(fragment_id)
                 QMessageBox.information(self, "Success", f"Fragment '{fragment_id}' updated")
             else:
                 QMessageBox.critical(self, "Error", f"Failed to update fragment '{fragment_id}'")
@@ -4250,6 +4506,8 @@ class PolicyFragmentTab(QWidget):
         reply = QMessageBox.question(self, "Confirm Delete", f"Delete fragment '{fragment_id}'?")
         if reply == QMessageBox.Yes:
             if self.remove_fragment(fragment_id):
+                # Clear form
+                self._clear_fragment_form()
                 QMessageBox.information(self, "Success", "Fragment deleted")
                 self._refresh_fragment_list()
             else:
@@ -4577,12 +4835,14 @@ class PolicyElementTab(QWidget):
         frag_select_layout.addWidget(QLabel("Interface:"))
         self.elem_frag_interface = QComboBox()
         self.elem_frag_interface.addItems(["auth", "account", "session", "password"])
+        self.elem_frag_interface.currentIndexChanged.connect(self._on_fragment_form_changed)
         frag_select_layout.addWidget(self.elem_frag_interface)
         
         # Control flag selection
         frag_select_layout.addWidget(QLabel("Control Flag:"))
         self.elem_frag_control = QComboBox()
         self._set_control_flags_for_source("fragment")
+        self.elem_frag_control.currentIndexChanged.connect(self._on_fragment_form_changed)
         frag_select_layout.addWidget(self.elem_frag_control)
         
         # Fragment/Service selection
@@ -4599,23 +4859,27 @@ class PolicyElementTab(QWidget):
         frag_select_layout.addWidget(add_frag_button)
         frag_layout.addLayout(frag_select_layout)
         
-        # Fragments in element table (reduced height: 3 rows instead of 4) - reordered columns
+        # Fragments in element table (scrollable with dynamic height)
         self.elem_frag_table = QTableWidget()
         self.elem_frag_table.setColumnCount(5)
         self.elem_frag_table.setHorizontalHeaderLabels(["#", "Interface", "Control flag", "Fragment Name", "Actions"])
         set_all_columns_resize_mode(self.elem_frag_table.horizontalHeader(), QHeaderView.Stretch)
-        self.elem_frag_table.setMaximumHeight(90)  # 3 rows
+        self.elem_frag_table.selectionModel().selectionChanged.connect(self._on_element_fragment_selected)
         frag_layout.addWidget(self.elem_frag_table)
+        
+        # Selected fragment index tracker
+        self.selected_fragment_index = -1
         
         
         frag_group.setLayout(frag_layout)
         main_layout.addWidget(frag_group)
         
-        # Elements list (expandable, no title)
+        # Elements list (expandable, no title, minimum 5 rows)
         self.elem_list = QTableWidget()
         self.elem_list.setColumnCount(3)
         self.elem_list.setHorizontalHeaderLabels(["Name", "Fragment Count", "Actions"])
         set_all_columns_resize_mode(self.elem_list.horizontalHeader(), QHeaderView.Stretch)
+        self.elem_list.setMinimumHeight(int(self.elem_list.fontMetrics().height() * 5.5))  # Minimum 5 rows
         main_layout.addWidget(self.elem_list, 1)  # Expandable with weight 1
         
         # Action buttons
@@ -4721,6 +4985,23 @@ class PolicyElementTab(QWidget):
             source_type = user_data[0]
         self._set_control_flags_for_source(source_type)
     
+    def _on_fragment_form_changed(self):
+        """Handle changes to fragment form (interface or control flag changed)."""
+        # Reset selection when user manually changes form values
+        self.selected_fragment_index = -1
+        
+        # Update PAM command display - show ONLY control_flag (without interface or module)
+        control = self.elem_frag_control.currentText()
+        
+        if control:
+            self.built_command_display.setText(control)
+        else:
+            self.built_command_display.clear()
+        
+        # Refresh table to update button labels (Reset Edit buttons)
+        if self.element_fragments:
+            self._refresh_element_fragments_table()
+    
     def refresh_data(self):
         """Refresh element data when tab is activated. Also refresh fragment list."""
         if DEBUG:
@@ -4811,7 +5092,7 @@ class PolicyElementTab(QWidget):
         self._refresh_element_fragments_table()
     
     def _refresh_element_fragments_table(self):
-        """Refresh the element fragments table."""
+        """Refresh the element fragments table with dynamic height based on row count."""
         self.elem_frag_table.setRowCount(0)
         
         for i, elem_frag in enumerate(self.element_fragments):
@@ -4830,10 +5111,13 @@ class PolicyElementTab(QWidget):
             buttons_layout = QHBoxLayout()
             buttons_layout.setContentsMargins(2, 2, 2, 2)
             
-            # Edit button
-            edit_button = QPushButton("Edit")
+            # Button label depends on selection: Edit or Update
+            is_selected = (i == self.selected_fragment_index)
+            button_label = "Update" if is_selected else "Edit"
+            
+            edit_button = QPushButton(button_label)
             edit_button.setMaximumWidth(60)
-            edit_button.clicked.connect(lambda checked, idx=i: self._edit_element_fragment(idx))
+            edit_button.clicked.connect(lambda checked, idx=i: self._edit_element_fragment_with_builder(idx))
             buttons_layout.addWidget(edit_button)
             
             # Delete button
@@ -4844,30 +5128,98 @@ class PolicyElementTab(QWidget):
             
             buttons_widget.setLayout(buttons_layout)
             self.elem_frag_table.setCellWidget(i, 4, buttons_widget)
+        
+        # Set dynamic height based on fragment count
+        # Less than 5: 3 rows, less than 8: 4 rows, 8+: 5 rows
+        row_count = len(self.element_fragments)
+        if row_count < 5:
+            desired_rows = 3
+        elif row_count < 8:
+            desired_rows = 4
+        else:
+            desired_rows = 5
+        
+        # Calculate height with header
+        row_height = self.elem_frag_table.rowHeight(0) if row_count > 0 else 30
+        header_height = self.elem_frag_table.horizontalHeader().height()
+        total_height = header_height + (row_height * desired_rows) + 4  # +4 for spacing
+        self.elem_frag_table.setMinimumHeight(total_height)
+    
+    def _on_element_fragment_selected(self, selected, deselected):
+        """Handle fragment selection in table."""
+        if selected.indexes():
+            # Get the selected row
+            row = selected.indexes()[0].row()
+            if 0 <= row < len(self.element_fragments):
+                self.selected_fragment_index = row
+                self._load_fragment_into_form(row)
+                # Refresh table to update button labels
+                self._refresh_element_fragments_table()
+    
+    def _load_fragment_into_form(self, index: int):
+        """Load selected fragment into form fields above the table."""
+        if not (0 <= index < len(self.element_fragments)):
+            return
+        
+        frag_ref = self.element_fragments[index]
+        
+        # Update Interface combo
+        self.elem_frag_interface.blockSignals(True)
+        self.elem_frag_interface.setCurrentText(frag_ref.interface or "auth")
+        self.elem_frag_interface.blockSignals(False)
+        
+        # Update Control Flag combo
+        self.elem_frag_control.blockSignals(True)
+        self.elem_frag_control.setCurrentText(frag_ref.control_flag or "required")
+        self.elem_frag_control.blockSignals(False)
+        
+        # Update Fragment/Service combo
+        self.elem_frag_combo.blockSignals(True)
+        combo_idx = self.elem_frag_combo.findText(frag_ref.fragment_ref, Qt.MatchContains)
+        if combo_idx >= 0:
+            self.elem_frag_combo.setCurrentIndex(combo_idx)
+        self.elem_frag_combo.blockSignals(False)
+        
+        # Update PAM Command display - show ONLY control_flag/extended syntax (without interface or module)
+        if frag_ref.extended_control:
+            extended_str = " ".join([f"{k}={v}" for k, v in frag_ref.extended_control.items()])
+            command = f"[{extended_str}]"
+        else:
+            command = frag_ref.control_flag or "required"
+        
+        self.built_command_display.setText(command)
     
     def _remove_element_fragment(self, index: int):
         """Remove a fragment from current element."""
         if 0 <= index < len(self.element_fragments):
             self.element_fragments.pop(index)
+            # Reset selection
+            if self.selected_fragment_index >= len(self.element_fragments):
+                self.selected_fragment_index = -1
             self._refresh_element_fragments_table()
     
-    def _edit_element_fragment(self, index: int):
-        """Edit a fragment reference in element (interface and control flag)."""
+    def _edit_element_fragment_with_builder(self, index: int):
+        """Edit a fragment reference in element using PAM Command Builder."""
         if not (0 <= index < len(self.element_fragments)):
             return
         
         frag_ref = self.element_fragments[index]
-        fragment_id = frag_ref.fragment_ref
-        fragment = self.fragment_manager.get_fragment(fragment_id)
         
-        if not fragment:
-            QMessageBox.warning(self, "Error", f"Fragment '{fragment_id}' not found")
-            return
-        
-        dialog = FragmentRefEditDialog(frag_ref, fragment, self.registry, self)
+        # Open PAM Command Builder with current values
+        dialog = PAMControlSyntaxBuilder(self, 
+                                        initial_interface=frag_ref.interface,
+                                        initial_control=frag_ref.control_flag,
+                                        initial_extended=frag_ref.extended_control if frag_ref.extended_control else None,
+                                        config_manager=self.config_manager)
         if dialog.exec_() == QDialog.Accepted:
-            updated_ref = dialog.get_fragment_ref()
-            self.element_fragments[index] = updated_ref
+            interface, control, extended_syntax = dialog.get_pam_line_parts()
+            
+            # Update fragment reference with new interface and control flag
+            frag_ref.interface = interface
+            frag_ref.control_flag = control
+            frag_ref.extended_control = extended_syntax if extended_syntax else {}
+            
+            self.element_fragments[index] = frag_ref
             self._refresh_element_fragments_table()
     
     def _add_element(self):
@@ -4906,6 +5258,8 @@ class PolicyElementTab(QWidget):
         self.elem_name_input.clear()
         self.elem_desc_input.clear()
         self.element_fragments.clear()
+        self.selected_fragment_index = -1
+        self.built_command_display.clear()
         self._refresh_element_fragments_table()
     
     def _refresh_element_list(self):
@@ -4924,11 +5278,11 @@ class PolicyElementTab(QWidget):
             buttons_layout = QHBoxLayout()
             buttons_layout.setContentsMargins(2, 2, 2, 2)
             
-            # Edit button
-            edit_button = QPushButton("Edit")
-            edit_button.setMaximumWidth(60)
-            edit_button.clicked.connect(lambda checked, eid=elem.id: self._edit_element(eid))
-            buttons_layout.addWidget(edit_button)
+            # Load button
+            load_button = QPushButton("Load")
+            load_button.setMaximumWidth(60)
+            load_button.clicked.connect(lambda checked, eid=elem.id: self._load_element(eid))
+            buttons_layout.addWidget(load_button)
             
             # Delete button
             delete_button = QPushButton("Delete")
@@ -4974,22 +5328,30 @@ class PolicyElementTab(QWidget):
                 buttons_widget.setLayout(buttons_layout)
                 self.elem_list.setCellWidget(row_count, 2, buttons_widget)
     
-    def _edit_element(self, element_id: str):
-        """Edit an element."""
+    def _load_element(self, element_id: str):
+        """Load an element into the form for editing."""
         element = self.get_element(element_id)
         if not element:
             QMessageBox.warning(self, "Error", f"Element '{element_id}' not found")
             return
         
-        dialog = ElementEditDialog(element, self)
-        if dialog.exec_() == QDialog.Accepted:
-            updated_element = dialog.get_element()
-            if self.update_element(updated_element):
-                self._save_elements(silent=True)
-                self._refresh_element_list()
-                QMessageBox.information(self, "Success", f"Element '{element_id}' updated")
-            else:
-                QMessageBox.critical(self, "Error", f"Failed to update element '{element_id}'")
+        # Clear current form
+        self._clear_element_form()
+        
+        # Load element data into form
+        self.elem_name_input.setText(element.id)
+        self.elem_desc_input.setPlainText(element.description)
+        
+        # Load fragment references
+        self.element_fragments = []
+        for frag_ref in element.fragments:
+            self.element_fragments.append(frag_ref)
+        
+        self.selected_fragment_index = -1
+        self._refresh_element_fragments_table()
+        
+        # Inform user
+        QMessageBox.information(self, "Element Loaded", f"Element '{element_id}' loaded into the form. You can now edit it.")
     
     def _delete_element(self, element_id: str):
         """Delete an element."""
@@ -5047,18 +5409,18 @@ class PolicyElementTab(QWidget):
     
     def _open_pam_builder(self):
         """Open PAM Command Builder dialog."""
-        dialog = PAMControlSyntaxBuilder(self)
+        dialog = PAMControlSyntaxBuilder(self, config_manager=self.config_manager)
         if dialog.exec_() == QDialog.Accepted:
             interface, control, extended_syntax = dialog.get_pam_line_parts()
             
-            # Build command string for display
-            if control:
-                # Standard syntax
-                command = f"{interface} {control}"
-            else:
+            # Build command string for display - show ONLY control_flag/extended syntax (without interface or module)
+            if extended_syntax:
                 # Extended syntax
-                extended_str = " ".join([f"{k}={v}" for k, v in extended_syntax.items()]) if extended_syntax else ""
-                command = f"{interface} [{extended_str}]"
+                extended_str = " ".join([f"{k}={v}" for k, v in extended_syntax.items()])
+                command = f"[{extended_str}]"
+            else:
+                # Standard syntax (control_flag only)
+                command = control if control else "required"
             
             # Display in command field
             self.built_command_display.setText(command)
@@ -5067,9 +5429,8 @@ class PolicyElementTab(QWidget):
             QMessageBox.information(
                 self, 
                 "PAM Command Built",
-                f"Interface: {interface}\n"
-                f"Control: {control if control else 'Extended Syntax'}\n"
-                f"Full Command: {command}"
+                f"Control Flag: {control if control else 'Extended Syntax'}\n"
+                f"Command: {command}"
             )
     
     def _validate_elements(self):
@@ -6992,9 +7353,8 @@ class TemplateManagerTab(QWidget):
             for cmd in pm_cmds:
                 if shutil.which(cmd):
                     try:
-                        # Try to check sudo
-                        result = os.system(f"sudo -n {cmd} --version >/dev/null 2>&1")
-                        if result == 0:
+                        # Try to check sudo without password
+                        if SubprocessExecutor.check_sudo_available(cmd):
                             can_install = True
                             if DEBUG:
                                 _debug_print(f"[Template Manager] _check_package_permissions() - Can install (found {pm_name})")

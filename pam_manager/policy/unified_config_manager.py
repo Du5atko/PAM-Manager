@@ -226,6 +226,9 @@ class UnifiedConfigManager:
                 f"Fragment '{clean_dict['id']}' added/updated"
             )
             
+            # CRITICAL: Save changes to YAML/JSON
+            self._sync_all_formats()
+            
             return True
         except Exception as e:
             print(f"[ERROR] Failed to add fragment: {e}")
@@ -251,6 +254,9 @@ class UnifiedConfigManager:
                 'success',
                 f"Fragment '{fragment_id}' removed"
             )
+            
+            # CRITICAL: Save changes to YAML/JSON
+            self._sync_all_formats()
             
             return True
         except Exception as e:
@@ -299,6 +305,9 @@ class UnifiedConfigManager:
                 f"Element '{clean_dict['id']}' added/updated"
             )
             
+            # CRITICAL: Save changes to YAML/JSON
+            self._sync_all_formats()
+            
             return True
         except Exception as e:
             print(f"[ERROR] Failed to add element: {e}")
@@ -317,6 +326,9 @@ class UnifiedConfigManager:
                 'success',
                 f"Element '{element_id}' removed"
             )
+            
+            # CRITICAL: Save changes to YAML/JSON
+            self._sync_all_formats()
             
             return True
         except Exception as e:
@@ -374,6 +386,9 @@ class UnifiedConfigManager:
                 f"Service '{service_id}' added/updated"
             )
             
+            # CRITICAL: Save changes to YAML/JSON
+            self._sync_all_formats()
+            
             return True
         except Exception as e:
             print(f"[ERROR] Failed to add service: {e}")
@@ -392,6 +407,9 @@ class UnifiedConfigManager:
                 'success',
                 f"Service '{service_id}' removed"
             )
+            
+            # CRITICAL: Save changes to YAML/JSON
+            self._sync_all_formats()
             
             return True
         except Exception as e:

@@ -1,9 +1,9 @@
 [Desktop Entry]
-Version=2.0
+Version=1.0
 Type=Application
 Name=PAM Manager
 Comment=PAM configuration management graphical interface
-Exec=./PAMManager.py
+Exec=/home/ghost/scripty/PAM-config.v2/runtime/PAMManager.py
 Icon=utilities-system
 Terminal=false
 Categories=System;Settings;
